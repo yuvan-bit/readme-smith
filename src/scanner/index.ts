@@ -195,9 +195,14 @@ export function scanProject(options: ScanOptions): ProjectProfile {
   };
 
   log.detail(`Profile ready in ${stats.scanDurationMs}ms · ${stats.linesOfCode} LOC · ${humanBytes(stats.bytes)}`);
-  if (commits) log.detail(`${commits} commits · ${contributors.length} contributors`);
+  if (commits) log.detail(`${count(commits, 'commit')} · ${count(contributors.length, 'contributor')}`);
 
   return profile;
+}
+
+/** `1 commit`, `2 commits` — a fresh repository reads badly otherwise. */
+function count(n: number, noun: string): string {
+  return `${n} ${n === 1 ? noun : `${noun}s`}`;
 }
 
 /** Serialize a profile for `--json`, dropping the absolute `root` for portability. */
