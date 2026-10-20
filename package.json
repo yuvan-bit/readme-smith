@@ -1,0 +1,60 @@
+{
+  "name": "readme-smith",
+  "version": "0.1.0",
+  "description": "Scan any repository and forge a structured, badge-rich, diagram-rich bilingual README in English and Simplified Chinese.",
+  "keywords": [
+    "readme",
+    "documentation",
+    "generator",
+    "cli",
+    "i18n",
+    "markdown",
+    "badges",
+    "mermaid",
+    "translate",
+    "open-source"
+  ],
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=18.17"
+  },
+  "bin": {
+    "readme-smith": "./dist/cli.js",
+    "rmfg": "./dist/cli.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "!dist/**/*.test.js",
+    "!dist/**/*.test.js.map",
+    "!dist/**/*.test.d.ts",
+    "!dist/**/*.test.d.ts.map",
+    "README.md",
+    "README.zh-CN.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsc -p tsconfig.json --watch",
+    "clean": "node -e \"fs.rmSync('dist',{recursive:true,force:true})\"",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "node --test \"dist/**/*.test.js\"",
+    "prepublishOnly": "npm run clean && npm run build",
+    "forge:self": "node dist/cli.js generate . --lang en,zh --force --unpublished"
+  },
+  "dependencies": {
+    "commander": "^12.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "^5.7.0"
+  }
+}

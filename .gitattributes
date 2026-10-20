@@ -1,0 +1,2 @@
+# Line endings are pinned so a checkout is byte-identical everywhere: the README reports byte sizes, and autocrlf would make that number depend on the machine.
+* text=auto eol=lf

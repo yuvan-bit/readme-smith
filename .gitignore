@@ -1,0 +1,25 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Local scratch: probe scripts, throwaway generations, README backups
+/tmp/
+
+# Generated READMEs are committed, their backups are not
+*.bak
+
+# Editor / OS noise
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Local environment overrides
+.env
+.env.local
