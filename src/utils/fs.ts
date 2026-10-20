@@ -1,9 +1,9 @@
-import { readdirSync, statSync, readFileSync, existsSync } from 'node:fs';
+import { readdirSync, statSync, readFileSync, existsSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
 /** Directories that never carry signal about a project. */
 const ALWAYS_IGNORED_DIRS = new Set([
-  '.git', '.hg', '.svn', 'node_modules', 'bower_components', 'vendor/bundle',
+  '.git', '.hg', '.svn', '.readme-smith', 'node_modules', 'bower_components', 'vendor/bundle',
   'dist', 'build', 'out', 'target', 'bin', 'obj', 'coverage', '.nyc_output',
   '.next', '.nuxt', '.output', '.turbo', '.cache', '.parcel-cache', '.vite',
   '__pycache__', '.pytest_cache', '.mypy_cache', '.ruff_cache', '.tox', 'venv',
@@ -20,6 +20,8 @@ const ALWAYS_IGNORED_FILES = [
   // a larger project than the first and counted the old README as content.
   /\.(?:bak|orig|rej|swp)$/i,
   /~$/,
+  /^README\.draft\.md$/i,
+  /^\.README\.bak\.md$/i,
   /\.lock$/i,
   /^package-lock\.json$/,
   /^yarn\.lock$/,
@@ -161,6 +163,19 @@ export function readTextSafe(abs: string, maxBytes = MAX_FILE_BYTES_FOR_CONTENT)
     return readFileSync(abs, 'utf8');
   } catch {
     return undefined;
+  }
+}
+
+export function writeText(abs: string, text: string): void {
+  writeFileSync(abs, text, 'utf8');
+}
+
+export function writeTextSafe(abs: string, text: string): boolean {
+  try {
+    writeFileSync(abs, text, 'utf8');
+    return true;
+  } catch {
+    return false;
   }
 }
 

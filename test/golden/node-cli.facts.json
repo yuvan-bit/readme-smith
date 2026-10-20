@@ -1,0 +1,241 @@
+{
+  "schemaVersion": 1,
+  "project": {
+    "name": "acme-tool",
+    "displayName": "Acme Tool",
+    "description": "Formats widgets from the command line.",
+    "version": "1.4.2",
+    "type": "cli",
+    "typeConfidence": 0.9,
+    "typeEvidence": [
+      "declared executable(s): acme",
+      "CLI framework dependency: commander"
+    ],
+    "languages": [
+      {
+        "name": "TypeScript",
+        "extensions": [
+          ".ts"
+        ],
+        "files": 1,
+        "bytes": 232,
+        "lines": 4,
+        "percent": 48.8,
+        "color": "#3178c6"
+      },
+      {
+        "name": "JSON",
+        "extensions": [
+          ".json"
+        ],
+        "files": 1,
+        "bytes": 552,
+        "lines": 0,
+        "percent": 23.2,
+        "color": "#292929"
+      },
+      {
+        "name": "YAML",
+        "extensions": [
+          ".yml"
+        ],
+        "files": 1,
+        "bytes": 291,
+        "lines": 0,
+        "percent": 12.3,
+        "color": "#cb171e"
+      },
+      {
+        "name": "Dockerfile",
+        "extensions": [
+          "dockerfile"
+        ],
+        "files": 1,
+        "bytes": 103,
+        "lines": 0,
+        "percent": 8.7,
+        "color": "#2496ED"
+      },
+      {
+        "name": "Markdown",
+        "extensions": [
+          ".md"
+        ],
+        "files": 1,
+        "bytes": 111,
+        "lines": 0,
+        "percent": 7,
+        "color": "#083fa1"
+      }
+    ],
+    "primaryLanguage": "TypeScript",
+    "license": {
+      "spdx": "MIT",
+      "family": "MIT",
+      "file": "LICENSE"
+    },
+    "repository": null
+  },
+  "manifests": [
+    {
+      "kind": "npm",
+      "path": "package.json"
+    }
+  ],
+  "scripts": [
+    {
+      "name": "build",
+      "command": "tsc -p tsconfig.json",
+      "invocation": "npm run build",
+      "kind": "build"
+    },
+    {
+      "name": "test",
+      "command": "node --test",
+      "invocation": "npm run test",
+      "kind": "test"
+    },
+    {
+      "name": "lint",
+      "command": "eslint .",
+      "invocation": "npm run lint",
+      "kind": "lint"
+    },
+    {
+      "name": "start",
+      "command": "node dist/cli.js",
+      "invocation": "npm run start",
+      "kind": "start"
+    }
+  ],
+  "binaries": [
+    "acme"
+  ],
+  "entryPoints": [
+    "acme",
+    "dist/index.js"
+  ],
+  "packages": [],
+  "install": {
+    "development": {
+      "command": "npm install",
+      "source": "package.json (npm)"
+    },
+    "consumer": {
+      "command": "npm install -g acme-tool",
+      "source": "manifest name (npm)"
+    }
+  },
+  "usage": {
+    "command": "acme --help",
+    "source": "declared executable"
+  },
+  "env": [
+    {
+      "name": "ACME_API_URL",
+      "sources": [
+        ".env.example",
+        "src/cli.ts"
+      ]
+    },
+    {
+      "name": "ACME_DEBUG",
+      "sources": [
+        "src/cli.ts"
+      ]
+    },
+    {
+      "name": "ACME_TOKEN",
+      "sources": [
+        ".env.example",
+        "src/cli.ts"
+      ]
+    }
+  ],
+  "configFiles": [
+    {
+      "path": ".env.example",
+      "kind": "env"
+    },
+    {
+      "path": "Dockerfile",
+      "kind": "docker"
+    }
+  ],
+  "ci": [
+    {
+      "file": ".github/workflows/ci.yml",
+      "name": "CI",
+      "triggers": [
+        "push",
+        "pull_request"
+      ],
+      "jobs": [
+        {
+          "name": "Test",
+          "steps": [
+            "actions/checkout@v4",
+            "Install",
+            "Build",
+            "Test"
+          ],
+          "commands": [
+            "npm ci",
+            "npm run build",
+            "npm test"
+          ]
+        }
+      ]
+    }
+  ],
+  "buildCommands": [
+    {
+      "command": "npm ci",
+      "source": "Dockerfile"
+    },
+    {
+      "command": "node dist/cli.js",
+      "source": "Dockerfile"
+    },
+    {
+      "command": "npm ci",
+      "source": ".github/workflows/ci.yml"
+    },
+    {
+      "command": "npm run build",
+      "source": ".github/workflows/ci.yml"
+    },
+    {
+      "command": "npm test",
+      "source": ".github/workflows/ci.yml"
+    }
+  ],
+  "data": null,
+  "community": {
+    "contributing": true,
+    "contributingPath": "CONTRIBUTING.md",
+    "changelog": false,
+    "security": false,
+    "issueTemplates": false,
+    "pullRequestTemplate": false
+  },
+  "git": {
+    "isGit": false,
+    "commits": null,
+    "lastCommit": null,
+    "contributors": null,
+    "recentCommits": []
+  },
+  "stats": {
+    "files": 8,
+    "directories": 3,
+    "sourceBytes": 1289,
+    "sourceLines": 4,
+    "runtimeDependencies": 1,
+    "developmentDependencies": 2
+  },
+  "missing": [
+    "repository"
+  ],
+  "warnings": []
+}

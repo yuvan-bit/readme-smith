@@ -1,0 +1,148 @@
+{
+  "schemaVersion": 1,
+  "project": {
+    "name": "acme-web",
+    "displayName": "Acme Web",
+    "description": "A widget dashboard for the web.",
+    "version": "0.5.0",
+    "type": "web",
+    "typeConfidence": 0.85,
+    "typeEvidence": [
+      "web framework dependency: react"
+    ],
+    "languages": [
+      {
+        "name": "TSX",
+        "extensions": [
+          ".tsx"
+        ],
+        "files": 1,
+        "bytes": 147,
+        "lines": 3,
+        "percent": 37.1,
+        "color": "#3178c6"
+      },
+      {
+        "name": "HTML",
+        "extensions": [
+          ".html"
+        ],
+        "files": 1,
+        "bytes": 214,
+        "lines": 11,
+        "percent": 27,
+        "color": "#e34c26"
+      },
+      {
+        "name": "JSON",
+        "extensions": [
+          ".json"
+        ],
+        "files": 1,
+        "bytes": 358,
+        "lines": 0,
+        "percent": 18.1,
+        "color": "#292929"
+      },
+      {
+        "name": "TypeScript",
+        "extensions": [
+          ".ts"
+        ],
+        "files": 1,
+        "bytes": 71,
+        "lines": 2,
+        "percent": 17.9,
+        "color": "#3178c6"
+      }
+    ],
+    "primaryLanguage": "TSX",
+    "license": null,
+    "repository": null
+  },
+  "manifests": [
+    {
+      "kind": "npm",
+      "path": "package.json"
+    }
+  ],
+  "scripts": [
+    {
+      "name": "dev",
+      "command": "vite",
+      "invocation": "npm run dev",
+      "kind": "dev"
+    },
+    {
+      "name": "build",
+      "command": "vite build",
+      "invocation": "npm run build",
+      "kind": "build"
+    },
+    {
+      "name": "test",
+      "command": "vitest run",
+      "invocation": "npm run test",
+      "kind": "test"
+    }
+  ],
+  "binaries": [],
+  "entryPoints": [],
+  "packages": [],
+  "install": {
+    "development": {
+      "command": "npm install",
+      "source": "package.json (npm)"
+    },
+    "consumer": null
+  },
+  "usage": {
+    "command": "npm run dev",
+    "source": "manifest script \"dev\""
+  },
+  "env": [],
+  "configFiles": [
+    {
+      "path": "vite.config.ts",
+      "kind": "vite"
+    }
+  ],
+  "ci": [],
+  "buildCommands": [],
+  "data": null,
+  "community": {
+    "contributing": false,
+    "contributingPath": null,
+    "changelog": false,
+    "security": false,
+    "issueTemplates": false,
+    "pullRequestTemplate": false
+  },
+  "git": {
+    "isGit": false,
+    "commits": null,
+    "lastCommit": null,
+    "contributors": null,
+    "recentCommits": []
+  },
+  "stats": {
+    "files": 4,
+    "directories": 2,
+    "sourceBytes": 790,
+    "sourceLines": 16,
+    "runtimeDependencies": 2,
+    "developmentDependencies": 2
+  },
+  "missing": [
+    "project.license",
+    "repository",
+    "entryPoints",
+    "install.consumer",
+    "env",
+    "ci"
+  ],
+  "warnings": [
+    "No licence detected (no LICENSE file and no manifest licence field).",
+    "No environment variables found."
+  ]
+}

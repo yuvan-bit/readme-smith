@@ -1,0 +1,30 @@
+name: README check
+
+on:
+  pull_request:
+    paths:
+      - "**/*.md"
+      - "package.json"
+      - "pyproject.toml"
+      - "Cargo.toml"
+      - "go.mod"
+      - "Gemfile"
+      - "*.gemspec"
+      - ".readme-smith.yaml"
+      - ".github/workflows/**"
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - uses: ./
+        with:
+          mode: check
+          min-score: "80"

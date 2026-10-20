@@ -1,18 +1,16 @@
 {
   "name": "readme-smith",
-  "version": "0.1.0",
-  "description": "Scan any repository and forge a structured, badge-rich, diagram-rich bilingual README in English and Simplified Chinese.",
+  "version": "0.2.0",
+  "description": "Local-first README health doctor: deterministic facts, reviewable drafts and a CI gate against README rot.",
   "keywords": [
     "readme",
     "documentation",
-    "generator",
+    "health-check",
+    "doctor",
     "cli",
-    "i18n",
-    "markdown",
-    "badges",
-    "mermaid",
-    "translate",
-    "open-source"
+    "ci",
+    "linter",
+    "local-first"
   ],
   "author": "yuwan41064 <yuwan41064@gmail.com>",
   "repository": {
@@ -25,8 +23,8 @@
     "node": ">=18.17"
   },
   "bin": {
-    "readme-smith": "./dist/cli.js",
-    "rmfg": "./dist/cli.js"
+    "rf": "./dist/cli.js",
+    "readme-smith": "./dist/cli.js"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -38,13 +36,16 @@
   },
   "files": [
     "dist",
+    "!dist/tests",
     "!dist/**/*.test.js",
     "!dist/**/*.test.js.map",
     "!dist/**/*.test.d.ts",
     "!dist/**/*.test.d.ts.map",
     "README.md",
-    "README.zh-CN.md",
-    "LICENSE"
+    "CHANGELOG.md",
+    "CONTRIBUTING.md",
+    "LICENSE",
+    "action.yml"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
@@ -53,10 +54,12 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "node --test \"dist/**/*.test.js\"",
     "prepublishOnly": "npm run clean && npm run build",
-    "forge:self": "node dist/cli.js generate . --lang en,zh --force --unpublished"
+    "self:doctor": "node dist/cli.js doctor .",
+    "self:check": "node dist/cli.js check ."
   },
   "dependencies": {
-    "commander": "^12.1.0"
+    "commander": "^12.1.0",
+    "yaml": "^2.5.0"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",

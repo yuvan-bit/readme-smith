@@ -1,0 +1,85 @@
+{
+  "schemaVersion": 1,
+  "project": {
+    "name": "dataset",
+    "displayName": "Dataset",
+    "description": null,
+    "version": null,
+    "type": "dataset",
+    "typeConfidence": 0.75,
+    "typeEvidence": [
+      "3 data files and little executable code"
+    ],
+    "languages": [],
+    "primaryLanguage": null,
+    "license": {
+      "spdx": "MIT",
+      "family": "MIT",
+      "file": "LICENSE"
+    },
+    "repository": null
+  },
+  "manifests": [],
+  "scripts": [],
+  "binaries": [],
+  "entryPoints": [],
+  "packages": [],
+  "install": {
+    "development": null,
+    "consumer": null
+  },
+  "usage": null,
+  "env": [],
+  "configFiles": [],
+  "ci": [],
+  "buildCommands": [],
+  "data": {
+    "files": 3,
+    "formats": [
+      "csv"
+    ]
+  },
+  "community": {
+    "contributing": false,
+    "contributingPath": null,
+    "changelog": false,
+    "security": false,
+    "issueTemplates": false,
+    "pullRequestTemplate": false
+  },
+  "git": {
+    "isGit": false,
+    "commits": null,
+    "lastCommit": null,
+    "contributors": null,
+    "recentCommits": []
+  },
+  "stats": {
+    "files": 5,
+    "directories": 2,
+    "sourceBytes": 0,
+    "sourceLines": 0,
+    "runtimeDependencies": 0,
+    "developmentDependencies": 0
+  },
+  "missing": [
+    "manifests",
+    "project.description",
+    "project.version",
+    "repository",
+    "scripts",
+    "entryPoints",
+    "install.development",
+    "install.consumer",
+    "usage",
+    "env",
+    "ci"
+  ],
+  "warnings": [
+    "No supported manifest found. Facts fall back to directory names and language statistics.",
+    "No project description in the manifest; drafts will leave a [verify] placeholder instead of guessing.",
+    "No scripts, dependencies or entry points could be extracted.",
+    "No runnable manifest scripts found.",
+    "No environment variables found."
+  ]
+}

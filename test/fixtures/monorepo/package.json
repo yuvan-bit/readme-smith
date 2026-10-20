@@ -1,0 +1,17 @@
+{
+  "name": "acme-workspace",
+  "private": true,
+  "version": "0.0.0",
+  "description": "A workspace with two widget packages.",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces",
+    "test": "npm run test --workspaces",
+    "dev": "npm run dev -w @acme/widget-a"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0"
+  }
+}

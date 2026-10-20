@@ -1,0 +1,79 @@
+{
+  "schemaVersion": 1,
+  "project": {
+    "name": "unknown",
+    "displayName": "Unknown",
+    "description": null,
+    "version": null,
+    "type": "unknown",
+    "typeConfidence": 0,
+    "typeEvidence": [
+      "no manifest and no recognised source files"
+    ],
+    "languages": [],
+    "primaryLanguage": null,
+    "license": null,
+    "repository": null
+  },
+  "manifests": [],
+  "scripts": [],
+  "binaries": [],
+  "entryPoints": [],
+  "packages": [],
+  "install": {
+    "development": null,
+    "consumer": null
+  },
+  "usage": null,
+  "env": [],
+  "configFiles": [],
+  "ci": [],
+  "buildCommands": [],
+  "data": null,
+  "community": {
+    "contributing": false,
+    "contributingPath": null,
+    "changelog": false,
+    "security": false,
+    "issueTemplates": false,
+    "pullRequestTemplate": false
+  },
+  "git": {
+    "isGit": false,
+    "commits": null,
+    "lastCommit": null,
+    "contributors": null,
+    "recentCommits": []
+  },
+  "stats": {
+    "files": 1,
+    "directories": 1,
+    "sourceBytes": 0,
+    "sourceLines": 0,
+    "runtimeDependencies": 0,
+    "developmentDependencies": 0
+  },
+  "missing": [
+    "manifests",
+    "project.description",
+    "project.version",
+    "project.license",
+    "repository",
+    "scripts",
+    "entryPoints",
+    "install.development",
+    "install.consumer",
+    "usage",
+    "env",
+    "ci"
+  ],
+  "warnings": [
+    "No supported manifest found. Facts fall back to directory names and language statistics.",
+    "Project type could not be identified. Add a manifest or force one with --preset.",
+    "No licence detected (no LICENSE file and no manifest licence field).",
+    "No project description in the manifest; drafts will leave a [verify] placeholder instead of guessing.",
+    "No scripts, dependencies or entry points could be extracted.",
+    "No runnable manifest scripts found.",
+    "No environment variables found."
+  ]
+}

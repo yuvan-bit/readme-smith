@@ -1,0 +1,14 @@
+[package]
+name = "acme-rs"
+version = "0.3.0"
+edition = "2021"
+description = "Fast widget indexer written in Rust."
+license = "MIT"
+
+[dependencies]
+clap = "4"
+serde = "1"
+
+[[bin]]
+name = "acme-rs"
+path = "src/main.rs"

@@ -1,0 +1,105 @@
+{
+  "schemaVersion": 1,
+  "project": {
+    "name": "acme-gem",
+    "displayName": "Acme Gem",
+    "description": "Widget helpers for Ruby applications.",
+    "version": "2.0.1",
+    "type": "cli",
+    "typeConfidence": 0.9,
+    "typeEvidence": [
+      "declared executable(s): acme"
+    ],
+    "languages": [
+      {
+        "name": "Ruby",
+        "extensions": [
+          ".rb",
+          "gemfile"
+        ],
+        "files": 2,
+        "bytes": 104,
+        "lines": 5,
+        "percent": 100,
+        "color": "#701516"
+      }
+    ],
+    "primaryLanguage": "Ruby",
+    "license": {
+      "spdx": "MIT",
+      "family": "MIT"
+    },
+    "repository": null
+  },
+  "manifests": [
+    {
+      "kind": "gem",
+      "path": "acme-gem.gemspec"
+    }
+  ],
+  "scripts": [],
+  "binaries": [
+    "acme"
+  ],
+  "entryPoints": [
+    "acme"
+  ],
+  "packages": [],
+  "install": {
+    "development": {
+      "command": "bundle install",
+      "source": "acme-gem.gemspec (gem)"
+    },
+    "consumer": {
+      "command": "gem install acme-gem",
+      "source": "manifest name (gem)"
+    }
+  },
+  "usage": {
+    "command": "acme --help",
+    "source": "declared executable"
+  },
+  "env": [
+    {
+      "name": "ACME_ENV",
+      "sources": [
+        "lib/acme.rb"
+      ]
+    }
+  ],
+  "configFiles": [],
+  "ci": [],
+  "buildCommands": [],
+  "data": null,
+  "community": {
+    "contributing": false,
+    "contributingPath": null,
+    "changelog": false,
+    "security": false,
+    "issueTemplates": false,
+    "pullRequestTemplate": false
+  },
+  "git": {
+    "isGit": false,
+    "commits": null,
+    "lastCommit": null,
+    "contributors": null,
+    "recentCommits": []
+  },
+  "stats": {
+    "files": 4,
+    "directories": 2,
+    "sourceBytes": 104,
+    "sourceLines": 5,
+    "runtimeDependencies": 1,
+    "developmentDependencies": 1
+  },
+  "missing": [
+    "repository",
+    "scripts",
+    "ci"
+  ],
+  "warnings": [
+    "No runnable manifest scripts found."
+  ]
+}

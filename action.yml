@@ -1,0 +1,133 @@
+name: readme-smith
+description: Local-first README health check and proposal action.
+author: yuwan41064
+branding:
+  icon: book-open
+  color: green
+
+inputs:
+  mode:
+    description: "check = fail the job when the README rots; proposal = write README.draft.md and report it."
+    required: false
+    default: check
+  path:
+    description: Repository path to inspect.
+    required: false
+    default: .
+  min-score:
+    description: Minimum score for check mode (0-100).
+    required: false
+    default: "80"
+  lang:
+    description: Draft language for proposal mode (auto, en or zh).
+    required: false
+    default: auto
+  ai:
+    description: "AI backend for proposal mode (off, local or openai). Defaults to off so CI never needs a key."
+    required: false
+    default: "off"
+
+outputs:
+  score:
+    description: README score produced by check mode.
+    value: ${{ steps.check.outputs.score }}
+  passed:
+    description: Whether check mode passed.
+    value: ${{ steps.check.outputs.passed }}
+  draft-path:
+    description: Absolute path of README.draft.md produced by proposal mode.
+    value: ${{ steps.proposal.outputs.draft-path }}
+  has-changes:
+    description: Whether proposal mode found sections to add.
+    value: ${{ steps.proposal.outputs.has-changes }}
+
+runs:
+  using: composite
+  steps:
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: "20"
+
+    - name: Install readme-smith
+      shell: bash
+      run: npm ci --prefix "$GITHUB_ACTION_PATH" --no-audit --no-fund
+
+    - name: Build readme-smith
+      shell: bash
+      run: npm run build --prefix "$GITHUB_ACTION_PATH"
+
+    - name: Validate mode
+      shell: bash
+      env:
+        RF_MODE: ${{ inputs.mode }}
+      run: |
+        if [ "$RF_MODE" != "check" ] && [ "$RF_MODE" != "proposal" ]; then
+          echo "mode must be check or proposal (got: $RF_MODE)" >&2
+          exit 2
+        fi
+
+    - name: Check README
+      id: check
+      if: ${{ inputs.mode == 'check' }}
+      shell: bash
+      env:
+        RF_PATH: ${{ inputs.path }}
+        RF_MIN_SCORE: ${{ inputs.min-score }}
+        RF_JSON: ${{ runner.temp }}/readme-smith-check.json
+      run: |
+        status=0
+        node "$GITHUB_ACTION_PATH/dist/cli.js" check "$RF_PATH" --min-score "$RF_MIN_SCORE" --json > "$RF_JSON" || status=$?
+        node -e '
+          const fs = require("fs");
+          try {
+            const report = JSON.parse(fs.readFileSync(process.env.RF_JSON, "utf8"));
+            if (process.env.GITHUB_OUTPUT) {
+              fs.appendFileSync(process.env.GITHUB_OUTPUT, `score=${report.score}\n`);
+              fs.appendFileSync(process.env.GITHUB_OUTPUT, `passed=${report.passed}\n`);
+            }
+          } catch {}
+        '
+        if [ "$status" -ne 0 ]; then
+          echo "readme-smith check failed; see the job summary for details." >&2
+        fi
+        exit "$status"
+
+    - name: Propose README draft
+      id: proposal
+      if: ${{ inputs.mode == 'proposal' }}
+      shell: bash
+      env:
+        RF_PATH: ${{ inputs.path }}
+        RF_LANG: ${{ inputs.lang }}
+        RF_AI: ${{ inputs.ai }}
+        RF_DRAFT_JSON: ${{ runner.temp }}/readme-smith-draft.json
+        RF_DIFF_JSON: ${{ runner.temp }}/readme-smith-diff.json
+      run: |
+        node "$GITHUB_ACTION_PATH/dist/cli.js" draft "$RF_PATH" --lang "$RF_LANG" --ai "$RF_AI" --json > "$RF_DRAFT_JSON"
+        draft_path="$(cd "$RF_PATH" && pwd)/README.draft.md"
+        diff_status=0
+        node "$GITHUB_ACTION_PATH/dist/cli.js" diff "$RF_PATH" --json > "$RF_DIFF_JSON" || diff_status=$?
+        if [ "$diff_status" -eq 2 ]; then
+          echo "readme-smith diff failed" >&2
+          exit 2
+        fi
+        RF_DRAFT_PATH="$draft_path" node -e '
+          const fs = require("fs");
+          const diff = JSON.parse(fs.readFileSync(process.env.RF_DIFF_JSON, "utf8"));
+          const count = Array.isArray(diff.changes) ? diff.changes.length : 0;
+          if (process.env.GITHUB_OUTPUT) {
+            fs.appendFileSync(process.env.GITHUB_OUTPUT, `draft-path=${process.env.RF_DRAFT_PATH}\n`);
+            fs.appendFileSync(process.env.GITHUB_OUTPUT, `has-changes=${diff.hasChanges}\n`);
+          }
+          if (process.env.GITHUB_STEP_SUMMARY) {
+            fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, [
+              "## readme-smith proposal",
+              "",
+              `- Draft: \`${process.env.RF_DRAFT_PATH}\``,
+              `- Sections needing changes: ${count}`,
+              "- README.md was not modified. Review the draft, then run `rf apply`.",
+              "",
+            ].join("\n"));
+          }
+        '

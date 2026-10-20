@@ -1,0 +1,107 @@
+{
+  "schemaVersion": 1,
+  "project": {
+    "name": "example.com/acme/service",
+    "displayName": "Example.com/acme/service",
+    "description": null,
+    "version": null,
+    "type": "cli",
+    "typeConfidence": 0.9,
+    "typeEvidence": [
+      "declared executable(s): service"
+    ],
+    "languages": [
+      {
+        "name": "Go",
+        "extensions": [
+          ".go"
+        ],
+        "files": 1,
+        "bytes": 92,
+        "lines": 8,
+        "percent": 100,
+        "color": "#00ADD8"
+      }
+    ],
+    "primaryLanguage": "Go",
+    "license": null,
+    "repository": null
+  },
+  "manifests": [
+    {
+      "kind": "go",
+      "path": "go.mod"
+    }
+  ],
+  "scripts": [],
+  "binaries": [
+    "service"
+  ],
+  "entryPoints": [
+    "main.go",
+    "service"
+  ],
+  "packages": [],
+  "install": {
+    "development": {
+      "command": "go mod download",
+      "source": "go.mod (go)"
+    },
+    "consumer": {
+      "command": "go install example.com/acme/service@latest",
+      "source": "manifest name (go)"
+    }
+  },
+  "usage": {
+    "command": "service --help",
+    "source": "declared executable"
+  },
+  "env": [
+    {
+      "name": "ACME_PORT",
+      "sources": [
+        "main.go"
+      ]
+    }
+  ],
+  "configFiles": [],
+  "ci": [],
+  "buildCommands": [],
+  "data": null,
+  "community": {
+    "contributing": false,
+    "contributingPath": null,
+    "changelog": false,
+    "security": false,
+    "issueTemplates": false,
+    "pullRequestTemplate": false
+  },
+  "git": {
+    "isGit": false,
+    "commits": null,
+    "lastCommit": null,
+    "contributors": null,
+    "recentCommits": []
+  },
+  "stats": {
+    "files": 3,
+    "directories": 1,
+    "sourceBytes": 92,
+    "sourceLines": 8,
+    "runtimeDependencies": 1,
+    "developmentDependencies": 0
+  },
+  "missing": [
+    "project.description",
+    "project.version",
+    "project.license",
+    "repository",
+    "scripts",
+    "ci"
+  ],
+  "warnings": [
+    "No licence detected (no LICENSE file and no manifest licence field).",
+    "No project description in the manifest; drafts will leave a [verify] placeholder instead of guessing.",
+    "No runnable manifest scripts found."
+  ]
+}

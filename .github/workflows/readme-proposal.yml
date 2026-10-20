@@ -1,0 +1,71 @@
+name: README proposal
+
+on:
+  workflow_dispatch:
+    inputs:
+      lang:
+        description: Draft language
+        type: choice
+        options: [auto, en, zh]
+        default: auto
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: readme-proposal
+  cancel-in-progress: false
+
+jobs:
+  proposal:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: proposal
+        uses: ./
+        with:
+          mode: proposal
+          lang: ${{ inputs.lang }}
+          ai: "off"
+
+      - name: Upload README.draft.md
+        uses: actions/upload-artifact@v4
+        if: steps.proposal.outputs.has-changes == 'true'
+        with:
+          name: readme-draft
+          path: ${{ steps.proposal.outputs.draft-path }}
+          if-no-files-found: warn
+
+      - name: Open proposal pull request
+        if: steps.proposal.outputs.has-changes == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: readme-smith/proposal-${{ github.run_id }}
+          BASE: ${{ github.event.repository.default_branch }}
+        run: |
+          cp README.draft.md README.md
+          git config user.name "readme-smith"
+          git config user.email "readme-smith@users.noreply.github.com"
+          git add README.md
+          if git diff --cached --quiet; then
+            echo "No committable changes."
+            exit 0
+          fi
+          git switch -c "$BRANCH"
+          git commit -m "docs: refresh README with readme-smith"
+          git push origin "$BRANCH"
+          gh pr create \
+            --base "$BASE" \
+            --head "$BRANCH" \
+            --title "docs: refresh README with readme-smith" \
+            --body "$(cat <<'EOF'
+          Generated deterministically by readme-smith from repository facts.
+
+          - The original README is the review baseline; this PR only applies `README.draft.md`.
+          - No commands, flags, environment variables or licence claims were invented.
+          - Review the diff, edit the wording, then merge or close.
+          - Add `#rf-skip` to a commit message to bypass the check when manual review is required.
+          EOF
+          )"

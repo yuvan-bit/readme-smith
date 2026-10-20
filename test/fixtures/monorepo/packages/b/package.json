@@ -1,0 +1,9 @@
+{
+  "name": "@acme/widget-b",
+  "version": "1.0.0",
+  "description": "Widget B.",
+  "main": "src/index.ts",
+  "dependencies": {
+    "zod": "^3.23.0"
+  }
+}

@@ -1,0 +1,7 @@
+- id: readme-smith
+  name: readme-smith check
+  description: Fail when README.md is below the score threshold or has rotted behind the project.
+  entry: rf check
+  args: ["--min-score", "80"]
+  language: system
+  pass_filenames: false

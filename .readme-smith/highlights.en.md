@@ -1,4 +1,0 @@
-- **What it does** — Scan any repository and forge a structured, badge-rich, diagram-rich bilingual README in English and Simplified Chinese.
-- **Why it exists** — Good code from non-native English writers loses readers at the README. Written by hand in a second language, it ends up thin: no badges, no diagrams, no working install step, and a Chinese file that drifts away from the English one a month later.
-- **When to reach for it** — Before publishing a repository, before a release, or whenever a README has fallen behind the code. It is useful with no API key at all; a key only buys prose translation.
-- **Why you can keep it** — Regenerating never destroys what you wrote: your own words live in `.readme-smith/<section>.<lang>.md` and replace only the body of a section, so the table of contents and the language switcher stay in step. These three lines came from such a file.

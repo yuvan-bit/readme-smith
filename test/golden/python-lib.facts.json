@@ -1,0 +1,115 @@
+{
+  "schemaVersion": 1,
+  "project": {
+    "name": "acme-py",
+    "displayName": "Acme Py",
+    "description": "Parse widget manifests in Python.",
+    "version": "1.2.0",
+    "type": "cli",
+    "typeConfidence": 0.9,
+    "typeEvidence": [
+      "declared executable(s): acme-py"
+    ],
+    "languages": [
+      {
+        "name": "Python",
+        "extensions": [
+          ".py"
+        ],
+        "files": 1,
+        "bytes": 170,
+        "lines": 5,
+        "percent": 69.5,
+        "color": "#3572A5"
+      },
+      {
+        "name": "TOML",
+        "extensions": [
+          ".toml"
+        ],
+        "files": 1,
+        "bytes": 373,
+        "lines": 0,
+        "percent": 30.5,
+        "color": "#9c4221"
+      }
+    ],
+    "primaryLanguage": "Python",
+    "license": {
+      "spdx": "Apache-2.0",
+      "family": "Apache"
+    },
+    "repository": null
+  },
+  "manifests": [
+    {
+      "kind": "pip",
+      "path": "pyproject.toml"
+    }
+  ],
+  "scripts": [],
+  "binaries": [
+    "acme-py"
+  ],
+  "entryPoints": [
+    "acme-py"
+  ],
+  "packages": [],
+  "install": {
+    "development": {
+      "command": "pip install -e .",
+      "source": "pyproject.toml (pip)"
+    },
+    "consumer": {
+      "command": "pipx install acme-py",
+      "source": "manifest name (pip)"
+    }
+  },
+  "usage": {
+    "command": "acme-py --help",
+    "source": "declared executable"
+  },
+  "env": [
+    {
+      "name": "ACME_HOME",
+      "sources": [
+        "src/acme/__init__.py"
+      ]
+    }
+  ],
+  "configFiles": [],
+  "ci": [],
+  "buildCommands": [],
+  "data": null,
+  "community": {
+    "contributing": false,
+    "contributingPath": null,
+    "changelog": false,
+    "security": false,
+    "issueTemplates": false,
+    "pullRequestTemplate": false
+  },
+  "git": {
+    "isGit": false,
+    "commits": null,
+    "lastCommit": null,
+    "contributors": null,
+    "recentCommits": []
+  },
+  "stats": {
+    "files": 3,
+    "directories": 2,
+    "sourceBytes": 543,
+    "sourceLines": 5,
+    "runtimeDependencies": 1,
+    "developmentDependencies": 1
+  },
+  "missing": [
+    "repository",
+    "scripts",
+    "ci"
+  ],
+  "warnings": [
+    "No runnable manifest scripts found."
+  ]
+}

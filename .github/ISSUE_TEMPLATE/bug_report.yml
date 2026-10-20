@@ -1,0 +1,52 @@
+name: Bug report
+description: Something produced the wrong fact, score, draft or exit code.
+title: "bug: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please do not include credentials, proprietary source code or `.env` contents.
+        A minimal fixture or the relevant `rf scan --json` fact block is the most useful reproduction.
+  - type: input
+    id: version
+    attributes:
+      label: readme-smith version
+      description: Output of `rf --version`.
+    validations:
+      required: true
+  - type: input
+    id: node
+    attributes:
+      label: Node.js and OS
+      placeholder: Node 20.11 on Windows 11
+    validations:
+      required: true
+  - type: textarea
+    id: command
+    attributes:
+      label: Command and output
+      description: Include the full command, exit code and stderr. Add `--verbose` if useful.
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal reproduction
+      description: Repository layout, manifest snippet or a link to a minimal fixture.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Confirmations
+      options:
+        - label: I removed secrets and private source code from this report.
+          required: true
+        - label: I checked that this is not already reported.
+          required: true

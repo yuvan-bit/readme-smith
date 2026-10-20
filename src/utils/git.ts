@@ -123,6 +123,55 @@ export function latestTag(root: string): string | undefined {
   return git(root, ['describe', '--tags', '--abbrev=0']) ?? undefined;
 }
 
+export interface GitCommit {
+  hash: string;
+  date: string;
+  subject: string;
+  files: string[];
+}
+
+/**
+ * The most recent commits with the files each one touched.
+ *
+ * `--name-only` prints the file list after a blank line; the parser keeps the
+ * order of `git log` (newest first) because freshness is an ordering question.
+ */
+export function recentCommits(root: string, count = 10): GitCommit[] {
+  const raw = git(root, [
+    'log',
+    `-n${count}`,
+    '--name-only',
+    '--pretty=format:%H%x09%aI%x09%s',
+  ]);
+  if (!raw) return [];
+  const commits: GitCommit[] = [];
+  let current: GitCommit | null = null;
+  for (const line of raw.split('\n')) {
+    if (!line.trim()) {
+      current = null;
+      continue;
+    }
+    const m = line.match(/^([0-9a-f]{7,40})\t([^\t]+)\t(.*)$/);
+    if (m) {
+      current = { hash: m[1]!, date: m[2]!, subject: m[3]!, files: [] };
+      commits.push(current);
+    } else if (current) {
+      current.files.push(line.trim().replace(/\\/g, '/'));
+    }
+  }
+  return commits;
+}
+
+export function headCommitMessage(root: string): string | undefined {
+  return git(root, ['log', '-1', '--pretty=format:%B']);
+}
+
+export function isFileDirty(root: string, file: string): boolean {
+  const out = git(root, ['status', '--porcelain', '--', file]);
+  return !!out && out.trim().length > 0;
+}
+
+
 export function commitCount(root: string): number | undefined {
   const n = git(root, ['rev-list', '--count', 'HEAD']);
   const parsed = n ? Number(n) : NaN;

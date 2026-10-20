@@ -1,0 +1,117 @@
+{
+  "schemaVersion": 1,
+  "project": {
+    "name": "acme-rs",
+    "displayName": "Acme Rs",
+    "description": "Fast widget indexer written in Rust.",
+    "version": "0.3.0",
+    "type": "cli",
+    "typeConfidence": 0.9,
+    "typeEvidence": [
+      "declared executable(s): acme-rs",
+      "CLI framework dependency: clap"
+    ],
+    "languages": [
+      {
+        "name": "Rust",
+        "extensions": [
+          ".rs"
+        ],
+        "files": 1,
+        "bytes": 118,
+        "lines": 5,
+        "percent": 73.1,
+        "color": "#dea584"
+      },
+      {
+        "name": "TOML",
+        "extensions": [
+          ".toml"
+        ],
+        "files": 1,
+        "bytes": 217,
+        "lines": 0,
+        "percent": 26.9,
+        "color": "#9c4221"
+      }
+    ],
+    "primaryLanguage": "Rust",
+    "license": {
+      "spdx": "MIT",
+      "family": "MIT"
+    },
+    "repository": null
+  },
+  "manifests": [
+    {
+      "kind": "cargo",
+      "path": "Cargo.toml"
+    }
+  ],
+  "scripts": [],
+  "binaries": [
+    "acme-rs"
+  ],
+  "entryPoints": [
+    "acme-rs",
+    "src/main.rs"
+  ],
+  "packages": [],
+  "install": {
+    "development": {
+      "command": "cargo build",
+      "source": "Cargo.toml (cargo)"
+    },
+    "consumer": {
+      "command": "cargo install acme-rs",
+      "source": "manifest name (cargo)"
+    }
+  },
+  "usage": {
+    "command": "acme-rs --help",
+    "source": "declared executable"
+  },
+  "env": [
+    {
+      "name": "ACME_KEY",
+      "sources": [
+        "src/main.rs"
+      ]
+    }
+  ],
+  "configFiles": [],
+  "ci": [],
+  "buildCommands": [],
+  "data": null,
+  "community": {
+    "contributing": false,
+    "contributingPath": null,
+    "changelog": false,
+    "security": false,
+    "issueTemplates": false,
+    "pullRequestTemplate": false
+  },
+  "git": {
+    "isGit": false,
+    "commits": null,
+    "lastCommit": null,
+    "contributors": null,
+    "recentCommits": []
+  },
+  "stats": {
+    "files": 3,
+    "directories": 2,
+    "sourceBytes": 335,
+    "sourceLines": 5,
+    "runtimeDependencies": 2,
+    "developmentDependencies": 0
+  },
+  "missing": [
+    "repository",
+    "scripts",
+    "ci"
+  ],
+  "warnings": [
+    "No runnable manifest scripts found."
+  ]
+}

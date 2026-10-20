@@ -1,9 +1,0 @@
-- [x] Scanner for 14 package ecosystems, gitignore-aware, no execution of scanned code
-- [x] Badges and Mermaid diagrams derived only from facts found in the repository
-- [x] Markdown-aware translation that leaves code, links and diagrams untouched
-- [x] Hand-written section bodies in `.readme-smith/` survive the next run
-- [ ] Publish the package so `npm install -g readme-smith` works
-- [ ] Verify registry and CI claims against the live services instead of inferring them from the manifest
-- [ ] More output languages, and a plugin API for third-party translation providers
-- [x] A `--check` mode for CI that fails when a README no longer matches the code
-- [ ] Report a byte size that does not depend on how the checkout chose its line endings

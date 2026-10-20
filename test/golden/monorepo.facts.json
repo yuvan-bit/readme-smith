@@ -1,0 +1,124 @@
+{
+  "schemaVersion": 1,
+  "project": {
+    "name": "acme-workspace",
+    "displayName": "Acme Workspace",
+    "description": "A workspace with two widget packages.",
+    "version": "0.0.0",
+    "type": "monorepo",
+    "typeConfidence": 0.95,
+    "typeEvidence": [
+      "multiple package directories or workspaces declared"
+    ],
+    "languages": [
+      {
+        "name": "JSON",
+        "extensions": [
+          ".json"
+        ],
+        "files": 3,
+        "bytes": 682,
+        "lines": 0,
+        "percent": 70.9,
+        "color": "#292929"
+      },
+      {
+        "name": "TypeScript",
+        "extensions": [
+          ".ts"
+        ],
+        "files": 2,
+        "bytes": 56,
+        "lines": 2,
+        "percent": 29.1,
+        "color": "#3178c6"
+      }
+    ],
+    "primaryLanguage": "TypeScript",
+    "license": null,
+    "repository": null
+  },
+  "manifests": [
+    {
+      "kind": "npm",
+      "path": "package.json"
+    }
+  ],
+  "scripts": [
+    {
+      "name": "build",
+      "command": "npm run build --workspaces",
+      "invocation": "npm run build",
+      "kind": "build"
+    },
+    {
+      "name": "test",
+      "command": "npm run test --workspaces",
+      "invocation": "npm run test",
+      "kind": "test"
+    },
+    {
+      "name": "dev",
+      "command": "npm run dev -w @acme/widget-a",
+      "invocation": "npm run dev",
+      "kind": "dev"
+    }
+  ],
+  "binaries": [],
+  "entryPoints": [],
+  "packages": [
+    "packages/a",
+    "packages/b"
+  ],
+  "install": {
+    "development": {
+      "command": "npm install",
+      "source": "package.json (npm)"
+    },
+    "consumer": null
+  },
+  "usage": {
+    "command": "npm run dev",
+    "source": "manifest script \"dev\""
+  },
+  "env": [],
+  "configFiles": [],
+  "ci": [],
+  "buildCommands": [],
+  "data": null,
+  "community": {
+    "contributing": false,
+    "contributingPath": null,
+    "changelog": false,
+    "security": false,
+    "issueTemplates": false,
+    "pullRequestTemplate": false
+  },
+  "git": {
+    "isGit": false,
+    "commits": null,
+    "lastCommit": null,
+    "contributors": null,
+    "recentCommits": []
+  },
+  "stats": {
+    "files": 5,
+    "directories": 5,
+    "sourceBytes": 738,
+    "sourceLines": 2,
+    "runtimeDependencies": 0,
+    "developmentDependencies": 1
+  },
+  "missing": [
+    "project.license",
+    "repository",
+    "entryPoints",
+    "install.consumer",
+    "env",
+    "ci"
+  ],
+  "warnings": [
+    "No licence detected (no LICENSE file and no manifest licence field).",
+    "No environment variables found."
+  ]
+}

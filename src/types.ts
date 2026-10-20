@@ -1,24 +1,24 @@
 /**
- * Shared domain types.
+ * Domain types for readme-smith.
  *
- * `ProjectProfile` is the single source of truth produced by the scanner and
- * consumed by both the renderer and the badge/diagram generators. Keeping it
- * serialisable means `--json` gives users a stable, machine-readable contract.
+ * The fact sheet is the contract between the deterministic scanner, the README
+ * analyser and the (optional) AI layer. Every field that cannot be proven from
+ * the repository is `null` — never guessed.
  */
 
 export type Lang = 'en' | 'zh';
+export type LanguageSetting = Lang | 'auto';
+export type PresetId = 'cli' | 'lib' | 'web' | 'monorepo' | 'dataset';
+export type ProjectType = PresetId | 'unknown';
+export type AiBackend = 'local' | 'openai' | 'off';
 
 export interface LanguageStat {
-  /** Canonical language name, e.g. `TypeScript`. */
   name: string;
-  /** File extensions that contributed, e.g. `['.ts', '.tsx']`. */
   extensions: string[];
   files: number;
   bytes: number;
   lines: number;
-  /** 0–100, rounded to one decimal. */
   percent: number;
-  /** GitHub linguist colour, used by the languages badge/bar. */
   color?: string;
 }
 
@@ -32,11 +32,11 @@ export type PackageEcosystem =
   | 'uv'
   | 'cargo'
   | 'go'
+  | 'gem'
   | 'composer'
   | 'nuget'
   | 'maven'
-  | 'gradle'
-  | 'gem';
+  | 'gradle';
 
 export interface Dependency {
   name: string;
@@ -44,245 +44,312 @@ export interface Dependency {
   dev: boolean;
 }
 
+export type ScriptKind = 'install' | 'build' | 'test' | 'lint' | 'dev' | 'start' | 'format' | 'other';
+
 export interface ScriptInfo {
   name: string;
   command: string;
-  /** Heuristic classification used to pick the "Quick Start" commands. */
-  kind: 'install' | 'build' | 'test' | 'lint' | 'dev' | 'start' | 'format' | 'other';
+  kind: ScriptKind;
+}
+
+export interface FactScript {
+  /** Script name as declared, e.g. `build`. */
+  name: string;
+  /** Raw command declared by the manifest. */
+  command: string;
+  /** The exact invocation a reader should type, e.g. `npm run build`. */
+  invocation: string;
+  kind: ScriptKind;
 }
 
 export interface RepoInfo {
   isGit: boolean;
-  /** Normalised HTTPS clone URL, when resolvable. */
   url?: string;
+  sshUrl?: string;
   host?: 'github' | 'gitlab' | 'bitbucket' | 'gitea' | 'other';
   owner?: string;
   name?: string;
-  defaultBranch: string;
-  /** `owner/name` shorthand for badge endpoints. */
+  defaultBranch?: string;
   slug?: string;
-  sshUrl?: string;
 }
 
 export interface LicenseInfo {
-  /** SPDX identifier when recognised, otherwise the raw family name. */
   spdx?: string;
   family: string;
   file?: string;
-  url?: string;
 }
 
-export interface TreeNode {
+export interface EnvFact {
   name: string;
-  /** Relative path from project root; empty for the root node. */
+  /** Where the evidence came from, e.g. `.env.example` or `src/config.ts`. */
+  sources: string[];
+}
+
+export interface ConfigFileFact {
   path: string;
-  type: 'dir' | 'file';
-  children?: TreeNode[];
-  /** One-line inferred purpose, rendered as a trailing comment in the tree. */
-  note?: string;
-  /** Same purpose in Chinese, used when rendering the zh README. */
-  noteZh?: string;
+  kind: 'env' | 'eslint' | 'prettier' | 'tsconfig' | 'vite' | 'webpack' | 'docker' | 'compose' | 'other';
 }
 
-export interface CliCommandInfo {
+export interface CiJobFact {
   name: string;
-  description?: string;
-  flags?: string[];
-  subcommands?: string[];
+  steps: string[];
+  commands: string[];
 }
 
-export interface FeatureFlags {
-  hasTests: boolean;
-  testFrameworks: string[];
-  testCommand?: string;
-  hasCI: boolean;
-  ciProviders: string[];
-  /** Primary workflow file, used to build the CI status badge. */
-  ciWorkflowFile?: string;
-  ciWorkflowName?: string;
-  hasDocker: boolean;
-  dockerFiles: string[];
-  hasCompose: boolean;
-  hasLinter: boolean;
-  linters: string[];
-  hasFormatter: boolean;
-  formatters: string[];
-  hasTypeCheck: boolean;
-  hasChangelog: boolean;
-  hasContributing: boolean;
-  hasCodeOfConduct: boolean;
-  hasSecurityPolicy: boolean;
-  hasIssueTemplates: boolean;
-  hasPullRequestTemplate: boolean;
-  hasEnvSample: boolean;
-  hasReleases: boolean;
-  isMonorepo: boolean;
-  workspacePackages: string[];
-  isLibrary: boolean;
-  isCli: boolean;
-  isApplication: boolean;
-  hasApi: boolean;
-  hasDocsSite: boolean;
-  hasBenchmarks: boolean;
-  hasStorybook: boolean;
-  hasI18n: boolean;
-  publishedToRegistry: boolean;
-  registry?: string;
+export interface CiWorkflowFact {
+  file: string;
+  name: string | null;
+  triggers: string[];
+  jobs: CiJobFact[];
 }
 
-export interface Contributor {
-  login: string;
-  contributions?: number;
-  avatarUrl?: string;
+export interface BuildCommandFact {
+  command: string;
+  source: string;
 }
 
-export interface ProjectStats {
-  totalFiles: number;
-  scannedFiles: number;
-  ignoredFiles: number;
-  linesOfCode: number;
-  /** Total bytes of counted source files. */
-  bytes: number;
-  directories: number;
-  scanDurationMs: number;
+export interface InstallFact {
+  command: string;
+  /** Where the command was derived from, e.g. `package.json (npm)`. */
+  source: string;
 }
 
-export interface DocReference {
-  /** Relative path. */
-  path: string;
-  title?: string;
-  kind: 'changelog' | 'contributing' | 'license' | 'security' | 'docs' | 'other';
+export interface RecentCommit {
+  hash: string;
+  date: string;
+  subject: string;
+  files: string[];
 }
 
-export interface ProjectProfile {
-  schemaVersion: 1;
-  name: string;
-  displayName: string;
-  description: string;
-  version: string;
-  root: string;
-  homepage?: string;
-  bugsUrl?: string;
-  keywords: string[];
-  authors: string[];
-  repo: RepoInfo;
-  license?: LicenseInfo;
+export interface GitFacts {
+  isGit: boolean;
+  commits: number | null;
+  lastCommit: { hash: string; date: string; subject: string } | null;
+  contributors: number | null;
+  recentCommits: RecentCommit[];
+}
+
+export interface ProjectFacts {
+  /** Manifest-derived name, repository name, or directory name (last resort). */
+  name: string | null;
+  displayName: string | null;
+  description: string | null;
+  version: string | null;
+  type: ProjectType;
+  typeConfidence: number;
+  typeEvidence: string[];
   languages: LanguageStat[];
-  primaryLanguage?: string;
-  ecosystem?: PackageEcosystem;
-  installCommand?: string;
-  usageCommand?: string;
-  /** Runtime requirements declared by the manifest, e.g. `{ node: '>=18.17' }`. */
-  engines: Record<string, string>;
-  scripts: ScriptInfo[];
-  dependencies: Dependency[];
-  devDependencies: Dependency[];
+  primaryLanguage: string | null;
+  license: LicenseInfo | null;
+  repository: RepoInfo | null;
+}
+
+export interface FactsSummary {
+  files: number;
+  directories: number;
+  sourceBytes: number;
+  sourceLines: number;
+  runtimeDependencies: number;
+  developmentDependencies: number;
+}
+
+export interface DatasetFacts {
+  files: number;
+  formats: string[];
+}
+
+export interface FactSheet {
+  schemaVersion: 1;
+  project: ProjectFacts;
+  manifests: Array<{ kind: string; path: string }>;
+  scripts: FactScript[];
+  binaries: string[];
   entryPoints: string[];
-  structure: TreeNode;
-  docs: DocReference[];
-  features: FeatureFlags;
-  envVars: string[];
-  cli?: {
-    binNames: string[];
-    commands: CliCommandInfo[];
+  /** Workspace package names or directories, sorted. Empty for single projects. */
+  packages: string[];
+  install: { development: InstallFact | null; consumer: InstallFact | null };
+  usage: InstallFact | null;
+  env: EnvFact[];
+  configFiles: ConfigFileFact[];
+  ci: CiWorkflowFact[];
+  buildCommands: BuildCommandFact[];
+  data: DatasetFacts | null;
+  community: {
+    contributing: boolean;
+    contributingPath: string | null;
+    changelog: boolean;
+    security: boolean;
+    issueTemplates: boolean;
+    pullRequestTemplate: boolean;
   };
-  stats: ProjectStats;
-  contributors: Contributor[];
-  /** Notable framework/runtime detections, e.g. `React`, `Express`, `Fastify`. */
-  frameworks: string[];
-  generatedAt: string;
-  /** Free-form warnings surfaced to the user at the end of a run. */
+  git: GitFacts;
+  stats: FactsSummary;
+  /** Fact paths that could not be proven, e.g. `project.description`. */
+  missing: string[];
   warnings: string[];
 }
 
-/** A shields.io style badge spec. */
-export interface BadgeSpec {
-  label: string;
+/* ------------------------------------------------------------------ *
+ * README parsing & scoring
+ * ------------------------------------------------------------------ */
+
+export interface Heading {
+  level: number;
+  text: string;
+  slug: string;
+  line: number;
+}
+
+export interface ParsedSection {
+  title: string;
+  level: number;
+  startLine: number;
+  endLine: number;
+  /** File line of the first non-empty body line after trimming leading blanks. */
+  bodyStartLine: number;
+  headings: Heading[];
+  body: string;
+}
+
+export interface CodeBlock {
+  lang: string | null;
+  content: string;
+  line: number;
+}
+
+export interface CommandMention {
+  raw: string;
+  line: number;
+  /** `script` means it was checked against a manifest script table. */
+  kind: 'script' | 'bin';
+  valid: boolean | null;
+  detail?: string;
+}
+
+export interface EnvMention {
+  name: string;
+  line: number;
+  known: boolean;
+}
+
+export interface StandardSections {
+  title: boolean;
+  intro: boolean;
+  install: boolean;
+  usage: boolean;
+  license: boolean;
+  contributing: boolean;
+  demo: boolean;
+  packages: boolean;
+  configuration: boolean;
+}
+
+export interface ReadmeAnalysis {
+  path: string | null;
+  exists: boolean;
+  lines: number;
+  language: LanguageSetting;
+  headings: Heading[];
+  sections: ParsedSection[];
+  codeBlocks: CodeBlock[];
+  standard: StandardSections;
+  commands: CommandMention[];
+  envMentions: EnvMention[];
+  hasToc: boolean;
+  imageCount: number;
+  h1Count: number;
+  /** Heading levels that skip a level, e.g. H2 directly followed by H4. */
+  headingJumps: number;
+  unlabelledCodeBlocks: number;
+  licenseStatement: string | null;
+}
+
+export type DimensionId = 'completeness' | 'usability' | 'accuracy' | 'readability' | 'freshness';
+
+export interface ScoreIssue {
+  code: string;
   message: string;
-  /** shields.io colour name or hex without `#`. */
-  color?: string;
-  /** Pre-built URL that overrides label/message. */
-  url?: string;
-  href?: string;
-  logo?: string;
-  logoColor?: string;
-  style?: 'flat' | 'flat-square' | 'for-the-badge' | 'plastic' | 'social';
+  line?: number;
 }
 
-export interface GenerateOptions {
-  root: string;
-  langs: Lang[];
-  /** Emit the non-primary language into a separate `README.<locale>.md`. */
-  separateFiles: boolean;
-  sections: SectionId[];
-  badges: boolean;
-  diagrams: boolean;
-  badgeStyle: NonNullable<BadgeSpec['style']>;
-  maxTreeDepth: number;
-  overwrite: boolean;
-  /** Translate project-specific prose (description, custom docs) via a provider. */
-  translateProse: boolean;
-  /** Pin the provider used by `translateProse`; omitted means auto-select. */
-  provider?: 'llm' | 'deepl' | 'free' | 'none';
-  /**
-   * Hand-written section bodies keyed `<sectionId>:<lang>`, loaded from
-   * `.readme-smith/<sectionId>.<lang>.md`. This is what makes the generated
-   * README safe to regenerate: the prose a human wrote survives `--force`,
-   * while the heading, table of contents and language switcher stay generated.
-   */
-  sectionOverrides: Record<string, string>;
-  /**
-   * Allow claims that the package is installable from a registry (version and
-   * downloads badges, an `npm install <name>` step). A manifest only proves the
-   * package *could* be published, so this is turned off with `--unpublished`.
-   */
-  allowRegistryClaims: boolean;
-  includeLanguageSwitcher: boolean;
-  toc: boolean;
-  tocMaxDepth: number;
+export interface DimensionScore {
+  id: DimensionId;
+  label: string;
+  score: number;
+  max: number;
+  issues: ScoreIssue[];
 }
 
-export type SectionId =
-  | 'title'
-  | 'badges'
-  | 'highlights'
-  | 'toc'
-  | 'features'
-  | 'architecture'
-  | 'quickstart'
-  | 'installation'
-  | 'usage'
-  | 'cli'
-  | 'config'
-  | 'scripts'
-  | 'structure'
-  | 'dependencies'
-  | 'languages'
-  | 'development'
-  | 'testing'
-  | 'docs'
-  | 'roadmap'
-  | 'contributing'
-  | 'contributors'
-  | 'changelog'
-  | 'faq'
-  | 'license'
-  | 'stats';
+export interface DoctorReport {
+  score: number;
+  threshold: number;
+  passed: boolean;
+  readme: { path: string; exists: boolean; lines: number; language: LanguageSetting };
+  dimensions: DimensionScore[];
+  missing: ScoreIssue[];
+}
 
-export interface TranslateOptions {
-  from: Lang | 'auto';
-  to: Lang;
-  /** Explicit provider override; otherwise auto-selected from env. */
-  provider?: 'llm' | 'deepl' | 'free' | 'none';
-  glossary?: Record<string, string>;
-  /** Extra do-not-translate terms. */
-  preserveTerms?: string[];
-  /** Free-form style instruction forwarded to LLM providers. */
-  instruction?: string;
-  concurrency: number;
-  /**
-   * Called after each batch of segments. A long README on a slow provider can
-   * run for minutes, and silence is indistinguishable from a hang.
-   */
-  onProgress?: (completed: number, total: number) => void;
+export interface FreshnessResult {
+  score: number;
+  max: number;
+  issues: ScoreIssue[];
+}
+
+/* ------------------------------------------------------------------ *
+ * Diff
+ * ------------------------------------------------------------------ */
+
+export type SectionChangeKind = 'added' | 'removed' | 'changed';
+
+export interface SectionChange {
+  kind: SectionChangeKind;
+  title: string;
+  added: number;
+  removed: number;
+  firstDifference?: { line: number; expected: string; actual: string };
+}
+
+export interface StructuredDiff {
+  hasChanges: boolean;
+  changes: SectionChange[];
+  summary: { added: number; removed: number; changed: number };
+  /** Human-readable unified excerpt for `--show`. */
+  unified: string;
+}
+
+/* ------------------------------------------------------------------ *
+ * Config
+ * ------------------------------------------------------------------ */
+
+export interface SmithConfig {
+  version: 1;
+  preset: PresetId | 'auto';
+  language: LanguageSetting;
+  minScore: number;
+  ai: {
+    backend: AiBackend;
+    baseUrl: string | null;
+    model: string | null;
+  };
+  weights: Record<DimensionId, number>;
+}
+
+export interface LoadedConfig {
+  config: SmithConfig;
+  path: string | null;
+  warnings: string[];
+  /** True when the file set `weights`, so preset defaults must not replace them. */
+  weightsExplicit: boolean;
+}
+
+export type DraftLanguage = Lang;
+
+export interface DraftResult {
+  markdown: string;
+  language: DraftLanguage;
+  aiUsed: boolean;
+  aiProvider: string | null;
+  warnings: string[];
+  /** Sections appended to an existing README (empty for a fresh document). */
+  addedSections: string[];
 }

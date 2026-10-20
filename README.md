@@ -1,362 +1,225 @@
-# Readme Smith
+# readme-smith
 
-<p align="center">**English** | [中文](./README.zh-CN.md)</p>
+A local-first README health doctor. It reads your repository, proves what it can, scores the README you already have, and writes a reviewable draft that never invents commands, arguments, environment variables or licences.
 
-<p align="center">Scan any repository and forge a structured, badge-rich, diagram-rich bilingual README in English and Simplified Chinese.</p>
+No account, no upload, no silent rewrites. The deterministic pipeline works fully offline.
 
-<p align="center"><img src="https://img.shields.io/badge/node-%3E=18.17-339933?logo=nodedotjs&logoColor=white&style=flat-square" alt="node: >=18.17" /> <img src="https://img.shields.io/badge/license-MIT-blue?style=flat-square" alt="license: MIT" /> <img src="https://img.shields.io/badge/language-TypeScript-3178c6?style=flat-square" alt="language: TypeScript" /> <img src="https://img.shields.io/badge/type-CLI-ff6f00?logo=gnubash&logoColor=white&style=flat-square" alt="type: CLI" /> <img src="https://img.shields.io/badge/types-included-3178c6?logo=typescript&logoColor=white&style=flat-square" alt="types: included" /></p>
+## Contents
 
-## Highlights
-- **What it does** — Scan any repository and forge a structured, badge-rich, diagram-rich bilingual README in English and Simplified Chinese.
-- **Why it exists** — Good code from non-native English writers loses readers at the README. Written by hand in a second language, it ends up thin: no badges, no diagrams, no working install step, and a Chinese file that drifts away from the English one a month later.
-- **When to reach for it** — Before publishing a repository, before a release, or whenever a README has fallen behind the code. It is useful with no API key at all; a key only buys prose translation.
-- **Why you can keep it** — Regenerating never destroys what you wrote: your own words live in `.readme-smith/<section>.<lang>.md` and replace only the body of a section, so the table of contents and the language switcher stay in step. These three lines came from such a file.
-
-## Table of Contents
-
-- [Highlights](#highlights)
-- [Features](#features)
-- [Architecture](#architecture)
-- [Quick Start](#quick-start)
+- [Why readme-smith](#why-readme-smith)
 - [Installation](#installation)
-  - [Requirements](#requirements)
-  - [From source](#from-source)
-- [Usage](#usage)
+- [Quick start](#quick-start)
 - [Commands](#commands)
-- [Environment Variables](#environment-variables)
-- [Available Scripts](#available-scripts)
-- [Project Structure](#project-structure)
-- [Dependencies](#dependencies)
-- [Languages](#languages)
+- [Scoring](#scoring)
+- [Configuration](#configuration)
+- [AI boundary](#ai-boundary)
+- [Custom templates](#custom-templates)
+- [CI integration](#ci-integration)
+- [Project layout](#project-layout)
 - [Development](#development)
-- [Testing](#testing)
-- [Roadmap](#roadmap)
 - [Contributing](#contributing)
-- [Contributors](#contributors)
-- [FAQ](#faq)
-  - [How is this different from similar tools?](#how-is-this-different-from-similar-tools)
-  - [How do I keep the README from falling behind the code?](#how-do-i-keep-the-readme-from-falling-behind-the-code)
-  - [Why would `--check` fail on a checkout with `core.autocrlf=true`?](#why-would---check-fail-on-a-checkout-with-coreautocrlftrue)
-  - [Is this production ready?](#is-this-production-ready)
 - [License](#license)
-- [Project Stats](#project-stats)
 
-## Features
-- Scriptable CLI with 7 commands
-- Fully typed — first-class TypeScript support
-- Internationalised, with translations built in
-- Cross-platform — runs on macOS, Linux and Windows
-- Built on **Commander**
+## Why readme-smith
 
-## Architecture
-```mermaid
-flowchart LR
-    user(["User"])
-    shell["$ readme-smith"]
-    user --> shell
+READMEs rot quietly. A script is renamed, a flag disappears, an install command stops working, and the README keeps promising the old world. Reviewers rarely notice until a new contributor hits the broken step.
 
-    subgraph cmds["Commands"]
-        direction TB
-        c_generate["generate — scan a project and write a structured bilingual README"]
-        c_translate["translate — translate an existing Markdown file, preserving code, badges and links"]
-        c_scan["scan — print what the scanner detects, without writing anything"]
-        c_providers["providers — show which translation backends are available"]
-        c_sections["sections — list the section ids accepted by --sections"]
-        c_serve["serve — start the server"]
-    end
-    shell --> cmds
+readme-smith treats the README as something to verify against the repository:
 
-    core["Core"]
-    out(["Output"])
-    cmds --> core --> out
+- **Facts first.** Names, versions, scripts, binaries, entry points, environment variables, config files, CI jobs, licences and dependency counts are extracted from files. Anything not proven is `null`, never guessed.
+- **Drafts, not edits.** `rf draft` writes `README.draft.md`. `README.md` is only changed by `rf apply`, after a preview and a backup.
+- **A CI gate for rot.** `rf check` combines the score with a deterministic draft diff, so a stale README fails the pull request instead of drifting for months.
 
-    env[["Environment Variables"]]
-    env -.-> core
-
-    style user fill:#e8f0fe,stroke:#4285f4
-    style core fill:#24292f,stroke:#24292f,color:#fff
-    style out fill:#e6f4ea,stroke:#34a853
-```
-
-## Quick Start
-1. Run it
-
-   ```bash
-   readme-smith generate
-   ```
+The tool is deliberately narrow: it does not generate a website, rewrite your title style, audit security or translate committed READMEs.
 
 ## Installation
-### Requirements
-| Runtime | Version |
-| --- | --- |
-| `node` | `>=18.17` |
 
-### From source
+Requires Node.js 18.17 or newer. Git is optional, but enables freshness checks and repository links.
+
 ```bash
 git clone https://gitee.com/yuwan41064/readme-smith.git
 cd readme-smith
 npm install
+npm run build
+npm link
 ```
 
-## Usage
-Run the CLI:
+`npm link` exposes both `rf` and `readme-smith` on your PATH. You can also run the CLI directly with `node dist/cli.js`.
 
-```bash
-readme-smith --help
-readme-smith generate --help
+## Quick start
+
+```console
+$ rf scan .
+$ rf doctor .
+README health: 100/100 (threshold 80) — PASS
+$ rf draft .
+Wrote README.draft.md (en, deterministic)
+$ rf diff --show
+$ rf apply --dry-run
+$ rf apply .
 ```
+
+`scan` always prints the fact sheet as JSON. `doctor` tells you what is missing. `draft` proposes a document. `diff` shows section-level changes. `apply` writes the draft and keeps `.README.bak.md`.
+
+If the project type is not recognised, the command exits with code `2` and names the manifests it looked for. You can force a template with `--preset cli|lib|web|monorepo|dataset`.
 
 ## Commands
-| Command | Description | Flags |
+
+| Command | What it does | Exit codes |
 | --- | --- | --- |
-| `generate` | scan a project and write a structured bilingual README | `-l, --lang <langs>` `-o, --out <dir>` `--filename <name>` `--stdout` `--json` `--no-badges` `--no-diagrams` `--no-toc` `--no-switcher` `--badge-style <style>` `--sections <list>` `--tree-depth <n>` `-f, --force` `--no-backup` `--dry-run` `--check` `--skip-git` `--translate-prose` `--provider <id>` `--unpublished` |
-| `translate` | translate an existing Markdown file, preserving code, badges and links | `--from <lang>` `--to <lang>` `--provider <id>` `-o, --out <file>` `--stdout` `--concurrency <n>` `--instruction <text>` `--preserve <terms>` `-f, --force` |
-| `scan` | print what the scanner detects, without writing anything | `--json` `--skip-git` |
-| `providers` | show which translation backends are available | — |
-| `sections` | list the section ids accepted by --sections | — |
-| `serve` | start the server | `-p, --port <n>` `--log <level>` |
-| `watch` | restart on change | `--flag-${i} <v>` |
+| `rf scan [path]` | Extract the deterministic fact sheet and print JSON. | `0` success, `2` unrecognised project type |
+| `rf draft [path]` | Write `README.draft.md`; never touch `README.md`. | `0` success, `2` scan/type failure |
+| `rf diff [path]` | Compare `README.md` with the draft section by section. | `0` differences, `1` none, `2` error or missing draft |
+| `rf doctor [path]` | Score completeness, usability, accuracy, readability and freshness. | `0` pass, `1` below threshold, `2` execution error |
+| `rf check [path]` | Run doctor plus a deterministic draft diff for CI. | `0` pass, `1` fail, `2` error |
+| `rf apply [path]` | Copy the draft into `README.md`, creating a backup. | `0` success, `2` missing draft or write failure |
+| `rf init [path]` | Write a commented `.readme-smith.yaml`. | `0` success |
 
-## Environment Variables
-The following environment variables can be set in your shell or a `.env` file:
+Every command accepts a path (default: the current directory) and these flags: `--preset`, `--ai local|openai|off`, `--json`, `--quiet`, `--verbose` and `--min-score`. `--quiet` prints only the final score or conclusion, `--json` emits structured data (including structured errors), and `--verbose` narrates fact extraction. `draft` also accepts `--lang auto|en|zh` and `--force`. `diff` accepts `--show`. `apply` accepts `--dry-run`.
 
-| Variable | Description | Required |
+`check` honours a `#rf-skip` marker in the head commit message: findings are still reported, but the gate passes so a human can review the exception. Use it sparingly.
+
+## Scoring
+
+The score is a weighted sum of five dimensions. Each applicable check carries partial credit, and a failing check is capped below its full weight so rounding cannot hide a defect.
+
+| Dimension | Default weight | What it checks |
 | --- | --- | --- |
-| `README_SMITH_LLM_BASE_URL` | — | optional |
-| `README_SMITH_LLM_MODEL` | — | optional |
-| `README_SMITH_LLM_API_KEY` | — | optional |
-| `MYMEMORY_EMAIL` | — | optional |
-| `OPENAI_BASE_URL` | — | optional |
-| `OPENAI_MODEL` | — | optional |
-| `README_SMITH_DEBUG` | — | optional |
-| `README_SMITH_DISABLE_GOOGLE` | — | optional |
-| `README_SMITH_DISABLE_MYMEMORY` | — | optional |
+| Completeness | 35 | Title, introduction, install, usage, licence, contributing, demo and package sections required by the preset |
+| Usability | 25 | Install commands derived from the manifest, runnable usage examples, no command drift |
+| Accuracy | 20 | Scripts exist, environment variables exist, the stated licence matches the repository |
+| Readability | 10 | One H1, no heading-level jumps, labelled code fences, a table of contents for long documents |
+| Freshness | 10 | Manifest changes after the last README update, using git history and working-tree state |
 
-> **Note** · The description column is intentionally blank — fill in what each variable does and its default.
+Presets adjust the weights: web projects value usability more, datasets value completeness and give install no weight. Set `minScore` in the config or pass `--min-score`. `doctor` and `check` exit `1` when the score is below it.
 
-## Available Scripts
-| Command | Category | Underlying command |
-| --- | --- | --- |
-| `npm run build` | Build | `tsc -p tsconfig.json` |
-| `npm run dev` | Development | `tsc -p tsconfig.json --watch` |
-| `npm run clean` | Other | `node -e "fs.rmSync('dist',{recursive:true,force:true})"` |
-| `npm run typecheck` | Other | `tsc -p tsconfig.json --noEmit` |
-| `npm run test` | Test | `node --test "dist/**/*.test.js"` |
-| `npm run prepublishOnly` | Other | `npm run clean && npm run build` |
-| `npm run forge:self` | Other | `node dist/cli.js generate . --lang en,zh --force --unpublished` |
+## Configuration
 
-## Project Structure
-```text
-readme-forge/
-├── src/   # source code
-│   ├── generate/
-│   │   ├── badges.ts
-│   │   ├── index.ts
-│   │   ├── markdown.ts
-│   │   ├── mermaid.test.ts
-│   │   ├── mermaid.ts
-│   │   ├── overrides.test.ts
-│   │   ├── overrides.ts
-│   │   └── sections.ts
-│   ├── i18n/   # translations
-│   │   ├── providers/
-│   │   │   ├── deepl.ts
-│   │   │   ├── free.ts
-│   │   │   ├── index.ts
-│   │   │   ├── llm.test.ts
-│   │   │   └── llm.ts
-│   │   ├── dict.ts
-│   │   ├── glossary.ts
-│   │   ├── index.ts
-│   │   ├── markdown.ts
-│   │   └── provider.ts
-│   ├── scanner/
-│   │   ├── cli-detect.test.ts
-│   │   ├── cli-detect.ts
-│   │   ├── features.ts
-│   │   ├── index.ts
-│   │   ├── languages.ts
-│   │   ├── manifests.ts
-│   │   └── structure.ts
-│   ├── utils/   # helpers
-│   │   ├── fs.ts
-│   │   ├── git.ts
-│   │   ├── logger.ts
-│   │   └── toml.ts
-│   ├── cli.test.ts
-│   ├── cli.ts
-│   ├── index.ts
-│   └── types.ts
-├── .readme-smith/   # hand-written README sections
-│   ├── faq.en.md
-│   ├── faq.zh.md
-│   ├── highlights.en.md
-│   ├── highlights.zh.md
-│   ├── roadmap.en.md
-│   └── roadmap.zh.md
-├── README.md   # project overview
-├── README.zh-CN.md   # project overview (中文)
-├── LICENSE   # license terms
-├── package.json   # dependencies & scripts
-├── tsconfig.json   # TypeScript config
-├── .gitattributes
-└── .gitignore   # git ignore rules
+Run `rf init` to create `.readme-smith.yaml`, then edit only what you need. The file is optional; the defaults are the same values.
+
+```yaml
+version: 1
+preset: auto          # auto | cli | lib | web | monorepo | dataset
+language: auto        # auto | en | zh
+minScore: 80
+
+ai:
+  backend: local      # local | openai | off
+  baseUrl: null       # OpenAI-compatible endpoint
+  model: null         # defaults to llama3.2 locally, gpt-4o-mini for openai
+
+weights:              # must sum to 100
+  completeness: 35
+  usability: 25
+  accuracy: 20
+  readability: 10
+  freshness: 10
 ```
 
-Key entry points:
-
-- `dist/index.js`
-- `dist/index.d.ts`
-- `src/index.ts`
-- `src/cli.ts`
-
-## Dependencies
-<details open>
-<summary>Runtime dependencies (1)</summary>
-
-| Package | Version |
+| Variable | When it is used |
 | --- | --- |
-| `commander` | `^12.1.0` |
+| `OPENAI_API_KEY` | Only when you explicitly select `--ai openai`. It is never read for local or offline runs. |
 
-</details>
+Configuration warnings are printed to stderr and never abort a run; invalid values fall back to the default.
 
-<details>
-<summary>Development dependencies (2)</summary>
+## AI boundary
 
-| Package | Version |
+AI is optional and narrow. It rewrites the fact block into an introductory paragraph; it never sees your source files, and it cannot add commands, flags, environment variables, API names, badges, authorship, versions or licences. Temperature is fixed at `0.2`.
+
+| Backend | Behaviour |
 | --- | --- |
-| `@types/node` | `^22.10.0` |
-| `typescript` | `^5.7.0` |
+| `local` (default) | Talks to an OpenAI-compatible server on `127.0.0.1:11434` (Ollama by default). If it is unavailable, the deterministic template is used with a warning. |
+| `openai` | Explicit cloud opt-in. Requires `OPENAI_API_KEY`. The fact block is the only project data sent. |
+| `off` | No network access. Everything is rendered from facts. `rf check` always uses this mode. |
 
-</details>
+Every AI result is validated against the fact sheet. Undeclared scripts, unknown environment variables, unsupported flags, wrong licence claims, unknown URLs, authorship and version claims are rejected, and the deterministic draft is used instead. Missing facts become `[verify]` markers rather than plausible-sounding guesses.
 
-## Languages
-| Language | Share | Files | Lines |
-| --- | ---: | ---: | ---: |
-| TypeScript | 99.4% | 33 | 6.8k |
-| Markdown | 0.6% | 6 | — |
+## Custom templates
 
-## Development
-```mermaid
-flowchart LR
-    install["Install — npm install"]
-    dev["Develop — npm run dev"]
-    install --> dev
-    build["Build — npm run build"]
-    dev --> build
-    test["Test — npm run test"]
-    build --> test
+Override a preset by adding a Markdown file under `.readme-smith/templates/`:
 
-    style install fill:#e8f0fe,stroke:#4285f4
+- `cli.md` applies to every CLI draft.
+- `cli.zh.md` wins over `cli.md` for Chinese drafts.
+
+Available variables are fact-backed: `name`, `displayName`, `description`, `version`, `type`, `preset`, `primaryLanguage`, `license`, `licenseFile`, `repository`, `install`, `installConsumer`, `installDev`, `usage`, `binaries`, `entryPoints`, `packages`, `scripts`, `scriptsTable`, `env`, `envTable`, `data`, `testCommand`, `buildCommand`, `contributing`, `ci`, `stats` and `installBlock`. An unknown variable is replaced with `[verify]` and reported as a warning.
+
+A custom template is used for new documents, for `--force`, or when `--lang` changes the language of an existing README. In normal merge mode the built-in preset fills only the missing sections, preserving your prose byte-for-byte.
+
+## CI integration
+
+The repository ships `action.yml` with two modes:
+
+- `check` runs `rf check` and fails the job on a low score or a stale draft. The result is written to the GitHub step summary.
+- `proposal` writes `README.draft.md`, reports how many sections need work, and leaves `README.md` untouched. The bundled `README proposal` workflow then opens a reviewable pull request from the draft; merging is still a human decision.
+
+```yaml
+name: README check
+on: [pull_request]
+permissions:
+  contents: read
+jobs:
+  readme:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - uses: ./
+        with:
+          mode: check
+          min-score: "80"
 ```
 
-Get a development environment running:
-
-1. Clone the repository
-
-   ```bash
-   git clone https://gitee.com/yuwan41064/readme-smith.git
-   ```
-
-2. Install dependencies
-
-   ```bash
-   npm install
-   ```
-
-3. Start the development workflow
-
-   ```bash
-   npm run dev
-   ```
-
-4. Build for production
-
-   ```bash
-   npm run build
-   ```
-
-5. Run the test suite
-
-   ```bash
-   npm run test
-   ```
-
-Work on a feature branch and open a pull request when ready.
-
-## Testing
-This project ships an automated test suite.
-
-Run all tests:
+The action builds the CLI from the checked-out source, so no npm release is required. Any other CI can run the CLI directly:
 
 ```bash
-npm run test
+npm ci
+npm run build
+node dist/cli.js check . --min-score 80
 ```
 
-## Roadmap
-- [x] Scanner for 14 package ecosystems, gitignore-aware, no execution of scanned code
-- [x] Badges and Mermaid diagrams derived only from facts found in the repository
-- [x] Markdown-aware translation that leaves code, links and diagrams untouched
-- [x] Hand-written section bodies in `.readme-smith/` survive the next run
-- [ ] Publish the package so `npm install -g readme-smith` works
-- [ ] Verify registry and CI claims against the live services instead of inferring them from the manifest
-- [ ] More output languages, and a plugin API for third-party translation providers
-- [x] A `--check` mode for CI that fails when a README no longer matches the code
-- [ ] Report a byte size that does not depend on how the checkout chose its line endings
+For pre-commit, install the CLI and add the hook:
+
+```yaml
+repos:
+  - repo: https://gitee.com/yuwan41064/readme-smith
+    rev: main
+    hooks:
+      - id: readme-smith
+        args: ["--min-score", "80"]
+```
+
+Set `fetch-depth: 2` (or more) when the CI checkout is shallow; freshness uses recent commit history.
+
+## Project layout
+
+- `src/facts/` — deterministic detectors for manifests, languages, scripts, binaries, environment variables, config files, CI workflows, build commands and licences.
+- `src/readme/` — README parser and the five-dimension scorer.
+- `src/draft/` — built-in templates, custom templates, merge-only-missing logic and the optional AI boundary.
+- `src/diff/` — section-level diff and unified excerpts.
+- `src/commands/` — one module per CLI command, including exit codes.
+- `test/fixtures/` and `test/golden/` — language fixtures and golden fact snapshots.
+- `src/tests/` — unit, golden and end-to-end tests.
+
+## Development
+
+| Command | Purpose |
+| --- | --- |
+| `npm install` | Install dependencies |
+| `npm run build` | Compile TypeScript to `dist/` |
+| `npm test` | Run the Node test suite |
+| `npm run typecheck` | Type-check without emitting |
+| `npm run dev` | Rebuild on change |
+| `npm run clean` | Remove `dist/` |
+| `npm run self:doctor` | Score this repository |
+| `npm run self:check` | Run the CI gate against this repository |
+
+The test suite covers nine fixtures (Node, Python, Rust, Go, Ruby, monorepo, web, dataset and an unrecognised project), golden fact sheets, scoring, merge idempotence, diff semantics, AI validation with a local stub, and every CLI exit code.
 
 ## Contributing
-Contributions are what make the open source community such an amazing place to learn, inspire, and create. Any contribution you make is **greatly appreciated**.
 
-Ways you can help:
-
-- Report bugs and request features by opening an issue
-- Submit a pull request — small fixes are just as welcome as features
-- Improve or translate the documentation
-- Share the project and give it a star if it helped you
-
-> **Heads up** · There is no contribution guide yet — opening an issue is the best way to start a conversation about a change.
-
-[Report a bug / request a feature](https://gitee.com/yuwan41064/readme-smith/issues)
-
-## Contributors
-Thanks to everyone who has contributed:
-
-| Contributor | Commits |
-| --- | ---: |
-| yuwan41064 | 1 |
-
-## FAQ
-### How is this different from similar tools?
-Most generators hand you a skeleton full of placeholder prose and a single language. Every badge, diagram and command here is derived from a fact the scanner actually found in your repository, and a claim it cannot verify is left out rather than guessed at. The output is two files in the same shape, so the English and the Simplified Chinese README cannot drift apart.
-
-### How do I keep the README from falling behind the code?
-Put `readme-smith generate --check` in CI with the same options you generate with. It renders the documents, compares them with the files on disk and exits non-zero on the first line where they stop agreeing, without writing anything. `generate` itself now re-renders until the document describes the files it just wrote, so the file it leaves behind passes the check immediately.
-
-### Why would `--check` fail on a checkout with `core.autocrlf=true`?
-The document reports the repository's size in bytes, and the same commit checked out with CRLF really is bigger. Pin line endings once with a `.gitattributes` (`* text=auto eol=lf`) and every machine agrees. The README's own line endings are never counted as drift.
-
-### Is this production ready?
-The translation provider layer, the Markdown list renderer and the `generate`/`--check` round trip have regression tests, the last of them by running the compiled CLI against temporary repositories. The command-line detector is tested as well; most of the scanner's other heuristics are not, so an unusual project layout can still be misread. Treat the output as a well-structured first draft: review it, replace the prompts it marks for you, then commit. Registry and CI claims need `--unpublished` or a real remote to be truthful, and the package itself is not published yet, so install it from source.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, the fact contract, and the steps for adding a language or ecosystem detector. Pull requests should keep the two dogfood commands green.
 
 ## License
-Distributed under the MIT license. See [LICENSE](https://opensource.org/licenses/MIT) for more information.
 
-## Project Stats
-<details>
-<summary>Statistics for `readme-smith`</summary>
-
-| Metric | Value |
-| --- | ---: |
-| Files scanned | 46 |
-| Lines of code | 6.8k |
-| Source size | 381 KB |
-| Directories | 8 |
-| Dependencies | 3 |
-| Contributors | 1 |
-| Languages | TypeScript 99% · Markdown 1% |
-
-</details>
-
-<hr />
-
-<p align="center">Generated by **readme-smith** from the repository contents</p>
+MIT. See [LICENSE](LICENSE) for the full text.
