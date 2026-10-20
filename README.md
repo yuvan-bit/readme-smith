@@ -32,6 +32,7 @@
 - [Testing](#testing)
 - [Roadmap](#roadmap)
 - [Contributing](#contributing)
+- [Contributors](#contributors)
 - [FAQ](#faq)
   - [How is this different from similar tools?](#how-is-this-different-from-similar-tools)
   - [How do I keep the README from falling behind the code?](#how-do-i-keep-the-readme-from-falling-behind-the-code)
@@ -92,7 +93,7 @@ flowchart LR
 
 ### From source
 ```bash
-git clone <repository-url>
+git clone https://gitee.com/yuwan41064/readme-smith.git
 cd readme-smith
 npm install
 ```
@@ -254,7 +255,7 @@ Get a development environment running:
 1. Clone the repository
 
    ```bash
-   git clone <repository-url>
+   git clone https://gitee.com/yuwan41064/readme-smith.git
    ```
 
 2. Install dependencies
@@ -315,6 +316,15 @@ Ways you can help:
 
 > **Heads up** · There is no contribution guide yet — opening an issue is the best way to start a conversation about a change.
 
+[Report a bug / request a feature](https://gitee.com/yuwan41064/readme-smith/issues)
+
+## Contributors
+Thanks to everyone who has contributed:
+
+| Contributor | Commits |
+| --- | ---: |
+| yuwan41064 | 1 |
+
 ## FAQ
 ### How is this different from similar tools?
 Most generators hand you a skeleton full of placeholder prose and a single language. Every badge, diagram and command here is derived from a fact the scanner actually found in your repository, and a claim it cannot verify is left out rather than guessed at. The output is two files in the same shape, so the English and the Simplified Chinese README cannot drift apart.
@@ -339,9 +349,10 @@ Distributed under the MIT license. See [LICENSE](https://opensource.org/licenses
 | --- | ---: |
 | Files scanned | 46 |
 | Lines of code | 6.8k |
-| Source size | 380 KB |
+| Source size | 381 KB |
 | Directories | 8 |
 | Dependencies | 3 |
+| Contributors | 1 |
 | Languages | TypeScript 99% · Markdown 1% |
 
 </details>

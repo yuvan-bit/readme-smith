@@ -32,6 +32,7 @@
 - [测试](#测试)
 - [路线图](#路线图)
 - [参与贡献](#参与贡献)
+- [贡献者](#贡献者)
 - [常见问题](#常见问题)
   - [它和同类工具有什么区别？](#它和同类工具有什么区别)
   - [怎么防止 README 落后于代码？](#怎么防止-readme-落后于代码)
@@ -92,7 +93,7 @@ flowchart LR
 
 ### 从源码安装
 ```bash
-git clone <仓库地址>
+git clone https://gitee.com/yuwan41064/readme-smith.git
 cd readme-smith
 npm install
 ```
@@ -254,7 +255,7 @@ flowchart LR
 1. 克隆仓库
 
    ```bash
-   git clone <仓库地址>
+   git clone https://gitee.com/yuwan41064/readme-smith.git
    ```
 
 2. 安装依赖
@@ -315,6 +316,15 @@ npm run test
 
 > **注意** · 目前还没有贡献指南 —— 想讨论某项改动，最好的方式是先开一个 Issue。
 
+[报告问题 / 提出建议](https://gitee.com/yuwan41064/readme-smith/issues)
+
+## 贡献者
+感谢所有贡献者的付出：
+
+| 贡献者 | 提交数 |
+| --- | ---: |
+| yuwan41064 | 1 |
+
 ## 常见问题
 ### 它和同类工具有什么区别？
 多数生成器给你的是一堆占位文字的空壳，而且只有一种语言。这里每一枚徽章、每张图、每条命令都来自扫描器在你仓库里真正找到的事实，无法核实的信息宁可不写。输出是结构完全对应的两份文件，中英文 README 不会各自漂移。
@@ -339,9 +349,10 @@ npm run test
 | --- | ---: |
 | 扫描文件数 | 46 |
 | 代码行数 | 6.8k |
-| 源码体积 | 380 KB |
+| 源码体积 | 381 KB |
 | 目录数 | 8 |
 | 依赖数量 | 3 |
+| 贡献者 | 1 |
 | 语言构成 | TypeScript 99% · Markdown 1% |
 
 </details>

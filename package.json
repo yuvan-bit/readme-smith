@@ -14,6 +14,11 @@
     "translate",
     "open-source"
   ],
+  "author": "yuwan41064 <yuwan41064@gmail.com>",
+  "repository": {
+    "type": "git",
+    "url": "https://gitee.com/yuwan41064/readme-smith.git"
+  },
   "license": "MIT",
   "type": "module",
   "engines": {
