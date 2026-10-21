@@ -530,7 +530,9 @@ console.log(draft.markdown);
 
 ### 版本与发布
 
-版本号遵循 [Semantic Versioning](https://semver.org/)。每个发布版本都有对应的 `vX.Y.Z` git tag、GitHub Release 和 [CHANGELOG.md](CHANGELOG.md) 条目；变更日志按“新增 / 变更 / 修复 / 移除”分类，说明该版本实际改了什么。当前版本为 **0.3.0**，已发布到 npm；GitHub 主仓库、权重归一化、真实仓库实测和 `rf` 命令移除都记录在该条目中。
+版本号遵循 [Semantic Versioning](https://semver.org/)。每个发布版本都有对应的 `vX.Y.Z` git tag、[GitHub Release](https://github.com/yuvan-bit/readme-smith/releases) 和 [CHANGELOG.md](CHANGELOG.md) 条目；变更日志按“新增 / 变更 / 修复 / 移除”分类，说明该版本实际改了什么。当前版本为 **0.3.0**，已发布到 npm；GitHub 主仓库、权重归一化、真实仓库实测和 `rf` 命令移除都记录在该条目中。
+
+0.3.0 的实测数据：122 项测试全部通过；覆盖率为行 81.90%、分支 78.20%、函数 82.18%；外部黑盒平台 74/74 通过；npm 全局与本地干净安装均返回 0.3.0，仓库自身 doctor 与 check 为 100/100。
 
 ## 贡献
 
