@@ -15,7 +15,7 @@ interface LicenseRule {
 }
 
 const RULES: LicenseRule[] = [
-  { spdx: 'MIT', family: 'MIT', all: [/permission is hereby granted, free of charge/i, /the software is provided "as is"/i] },
+  { spdx: 'MIT', family: 'MIT', all: [/permission is hereby granted, free of charge/i, /the software is provided ["']as is["']/i] },
   { spdx: 'Apache-2.0', family: 'Apache', all: [/apache license/i, /version 2\.0/i] },
   { spdx: 'GPL-3.0-only', family: 'GPL', all: [/gnu general public license/i, /version 3/i], none: [/lesser/i] },
   { spdx: 'GPL-2.0-only', family: 'GPL', all: [/gnu general public license/i, /version 2/i], none: [/lesser/i] },

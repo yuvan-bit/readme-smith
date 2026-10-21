@@ -1,7 +1,8 @@
 import path from 'node:path';
 import type { CodeBlock, CommandMention, EnvMention, Heading, LanguageSetting, ParsedSection, ReadmeAnalysis, StandardSections } from '../types.js';
 import type { FactSheet } from '../types.js';
-import { exists, readTextSafe } from '../utils/fs.js';
+import { findCaseInsensitive, readTextSafe } from '../utils/fs.js';
+import { isSystemEnv } from '../facts/env.js';
 
 export const README_FILE = 'README.md';
 
@@ -58,9 +59,12 @@ const LICENSE_NAMES: Array<[RegExp, string]> = [
 ];
 
 export function readReadme(root: string): { exists: boolean; path: string; text: string } {
-  const abs = path.join(root, README_FILE);
-  const text = readTextSafe(abs, 2 * 1024 * 1024);
-  return { exists: text !== undefined && exists(root, README_FILE), path: README_FILE, text: text ?? '' };
+  // Real repositories ship README.md, Readme.md and readme.md. The filename is
+  // reported as found so later git lookups compare the right case.
+  const name = findCaseInsensitive(root, README_FILE);
+  if (!name) return { exists: false, path: README_FILE, text: '' };
+  const text = readTextSafe(path.join(root, name), 2 * 1024 * 1024);
+  return { exists: text !== undefined, path: name, text: text ?? '' };
 }
 
 export function parseReadme(text: string): ParsedReadme {
@@ -112,9 +116,15 @@ export function parseReadme(text: string): ParsedReadme {
     codeBlocks.push({ lang: fence.lang, content: fence.body.join('\n'), line: fence.start });
   }
 
+  headings.push(...collectHtmlHeadings(lines, fenceLine));
+  headings.sort((a, b) => a.line - b.line || a.level - b.level);
+
+  const subLevels = headings.filter((h) => h.level > 1).map((h) => h.level);
   const sectionLevel = headings.some((h) => h.level === 2)
     ? 2
-    : Math.min(...headings.filter((h) => h.level > 1).map((h) => h.level), 6);
+    : subLevels.length > 0
+      ? Math.min(...subLevels)
+      : 2;
 
   const sections: ParsedSection[] = [];
   const firstSectionIndex = headings.findIndex((h) => h.level === sectionLevel);
@@ -152,9 +162,11 @@ export function parseReadme(text: string): ParsedReadme {
     .filter((line) => {
       const t = line.trim();
       if (!t) return false;
-      if (/^!\[/.test(t) || /^<img\b/i.test(t) || /^<p\b/i.test(t) || /^<\/p>/i.test(t)) return false;
-      if (/^\[!\[/.test(t)) return false;
+      if (/^!\[/.test(t) || /^\[!\[/.test(t)) return false;
       if (/^\[[^\]]+\]\([^)]*\)\s*\|/.test(t)) return false;
+      // Centered HTML headers and badge blocks are chrome, not prose.
+      const visible = t.replace(/<[^>]*>/g, '').replace(/&[a-z#0-9]+;/gi, '').trim();
+      if (!visible || /^[|=:\-\s]+$/.test(visible)) return false;
       return true;
     })
     .join('\n')
@@ -189,6 +201,49 @@ function normaliseLang(info: string | undefined): string | null {
   const clean = info.trim().toLowerCase().replace(/^\{?\.?/, '').replace(/[},].*$/, '');
   if (!clean || clean === 'text' || clean === 'plain' || clean === 'plaintext') return null;
   return clean;
+}
+
+/**
+ * HTML headings are common in logo-centred READMEs (chalk, cross-env). Without
+ * them the H1 check and the title/intro heuristics misjudge those projects.
+ */
+function collectHtmlHeadings(lines: string[], skip: Set<number>): Heading[] {
+  const out: Heading[] = [];
+  const openTag = /<h([1-6])\b[^>]*>/i;
+  for (let i = 0; i < lines.length; i++) {
+    if (skip.has(i)) continue;
+    const line = lines[i]!;
+    const open = line.match(openTag);
+    if (!open) continue;
+    const level = Number(open[1]);
+    const closeRe = new RegExp(`</h${level}\\s*>`, 'i');
+    let content = line.slice((open.index ?? 0) + open[0].length);
+    let close = content.match(closeRe);
+    let end = i;
+    while (!close && end + 1 < lines.length && end - i < 40 && !skip.has(end + 1)) {
+      end += 1;
+      content += `\n${lines[end]!}`;
+      close = content.match(closeRe);
+    }
+    if (!close) continue;
+    const text = htmlHeadingText(content.slice(0, close.index));
+    if (text) out.push({ level, text, slug: slugify(text), line: i + 1 });
+    i = end;
+  }
+  return out;
+}
+
+function htmlHeadingText(html: string): string {
+  const alt = [...html.matchAll(/<img\b[^>]*\balt\s*=\s*["']([^"']+)["'][^>]*>/gi)]
+    .map((m) => m[1]!.trim())
+    .filter(Boolean)
+    .join(' ');
+  const stripped = html
+    .replace(/<img\b[^>]*>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&[a-z#0-9]+;/gi, ' ')
+    .trim();
+  return stripInline(stripped) || stripInline(alt);
 }
 
 export function stripInline(text: string): string {
@@ -283,8 +338,9 @@ export function analyseCodeCommands(
       if (trimmed) {
         // Split obvious command chains so `npm ci && npm run build` validates both.
         for (const piece of trimmed.split(/\s*(?:&&|\|\|)\s*/)) addCommand(piece, line);
-        for (const m of trimmed.matchAll(/\b([A-Z][A-Z0-9_]{2,})\s*=/g)) addEnv(m[1]!, line);
-        for (const m of trimmed.matchAll(/\$\{([A-Z][A-Z0-9_]{2,})\}|\$([A-Z][A-Z0-9_]{2,})/g)) addEnv(m[1] ?? m[2]!, line);
+        // Only leading assignments declare configuration. `$VAR` expansions and
+        // JSON examples mention variables without claiming the project owns them.
+        for (const m of trimmed.replace(/^\$\s+/, '').matchAll(/^(?:export\s+)?([A-Z][A-Z0-9_]{2,})\s*=/g)) addEnv(m[1]!, line);
       }
       line++;
     }
@@ -296,8 +352,7 @@ export function analyseCodeCommands(
     for (const m of line.matchAll(/`([^`\n]+)`/g)) {
       const snippet = m[1]!.trim();
       addCommand(snippet, i + 1);
-      for (const env of snippet.matchAll(/^([A-Z][A-Z0-9_]{2,})=/g)) addEnv(env[1]!, i + 1);
-      for (const env of snippet.matchAll(/\$\{?([A-Z][A-Z0-9_]{2,})\}?/g)) addEnv(env[1]!, i + 1);
+      for (const env of snippet.matchAll(/^(?:export\s+)?([A-Z][A-Z0-9_]{2,})=/g)) addEnv(env[1]!, i + 1);
     }
     // Markdown tables in configuration sections list env names in the first cell.
     const table = line.match(/^\|\s*`?([A-Z][A-Z0-9_]{2,})`?\s*\|/);
@@ -343,7 +398,9 @@ function validatePackageManagerCommand(
 }
 
 function isEnvName(name: string): boolean {
-  if (ENV_NOISE.has(name)) return false;
+  // NODE_ENV, FORCE_COLOR and friends are platform conventions rather than
+  // project configuration; requiring them in source files is a false positive.
+  if (ENV_NOISE.has(name) || isSystemEnv(name)) return false;
   if (!/^[A-Z][A-Z0-9_]{2,}$/.test(name)) return false;
   // Require an underscore or at least four characters: short all-caps words are
   // almost always prose (GET, CLI, PDF), not configuration.

@@ -2,7 +2,7 @@ import path from 'node:path';
 import type { EnvFact } from '../types.js';
 import { readTextSafe, type WalkedFile } from '../utils/fs.js';
 
-const NOISE = new Set([
+export const SYSTEM_ENV = new Set([
   'PATH', 'HOME', 'USER', 'PWD', 'SHELL', 'TERM', 'LANG', 'LC_ALL', 'TZ',
   'NODE_ENV', 'CI', 'GITHUB_ACTIONS', 'GITHUB_TOKEN', 'GITHUB_SHA', 'GITHUB_REF',
   'GITHUB_WORKSPACE', 'GITHUB_REPOSITORY', 'GITHUB_RUN_ID', 'GITHUB_EVENT_NAME',
@@ -11,6 +11,11 @@ const NOISE = new Set([
   'GOROOT', 'CARGO_HOME', 'RUSTUP_HOME', 'JAVA_HOME', 'NVM_DIR', 'FORCE_COLOR',
   'NO_COLOR',
 ]);
+
+/** Platform-provided variables that never need repository evidence. */
+export function isSystemEnv(name: string): boolean {
+  return SYSTEM_ENV.has(name);
+}
 
 const ASSIGNMENT = /^\s*(?:export\s+)?([A-Z][A-Z0-9_]{2,})\s*=/;
 
@@ -58,7 +63,7 @@ const MAX_ENV_FACTS = 60;
 export function detectEnvFacts(root: string, files: WalkedFile[]): EnvFact[] {
   const found = new Map<string, { sources: Set<string>; weight: number }>();
   const add = (name: string, source: string, weight: number): void => {
-    if (NOISE.has(name)) return;
+    if (SYSTEM_ENV.has(name)) return;
     const entry = found.get(name) ?? { sources: new Set<string>(), weight: 0 };
     entry.sources.add(source);
     entry.weight += weight;

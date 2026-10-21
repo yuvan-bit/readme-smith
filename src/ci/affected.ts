@@ -33,7 +33,7 @@ function isPackageReadme(file: string): boolean {
 
 /**
  * Workspace directories whose manifest or package README changed.
- * The repository root is excluded because `rf check` always evaluates it.
+ * The repository root is excluded because `readme-smith check` always evaluates it.
  */
 export function affectedPackageTargets(root: string, files: string[]): string[] {
   const targets = new Set<string>();

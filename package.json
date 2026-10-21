@@ -1,6 +1,6 @@
 {
   "name": "readme-smith",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Local-first README health doctor: deterministic facts, reviewable drafts and CI gates. 本地优先的 README 健康医生。",
   "keywords": [
     "readme",
@@ -15,11 +15,11 @@
   "author": "yuwan41064 <yuwan41064@gmail.com>",
   "repository": {
     "type": "git",
-    "url": "https://gitee.com/yuwan41064/readme-smith.git"
+    "url": "https://github.com/yuvan-bit/readme-smith.git"
   },
-  "homepage": "https://gitee.com/yuwan41064/readme-smith",
+  "homepage": "https://github.com/yuvan-bit/readme-smith#readme",
   "bugs": {
-    "url": "https://gitee.com/yuwan41064/readme-smith/issues"
+    "url": "https://github.com/yuvan-bit/readme-smith/issues"
   },
   "license": "MIT",
   "type": "module",
@@ -27,8 +27,7 @@
     "node": ">=18.17"
   },
   "bin": {
-    "readme-smith": "./dist/cli.js",
-    "rf": "./dist/cli.js"
+    "readme-smith": "./dist/cli.js"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

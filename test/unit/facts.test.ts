@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { scanFacts } from '../../src/facts/index.js';
-import { fixture, GOLDEN } from './helpers.js';
+import { detectLicense } from '../../src/facts/license.js';
+import { fixture, GOLDEN, tempDir } from './helpers.js';
 
 test('node CLI fixture extracts executable, scripts and install commands', () => {
   const facts = scanFacts({ root: fixture('node-cli'), skipGit: true });
@@ -24,6 +25,26 @@ test('node CLI fixture extracts executable, scripts and install commands', () =>
   assert.equal(facts.community.contributingPath, 'CONTRIBUTING.md');
   assert.ok(facts.configFiles.some((c) => c.path === '.env.example'));
   assert.ok(facts.configFiles.some((c) => c.path === 'Dockerfile' && c.kind === 'docker'));
+});
+
+test('licence detection accepts single-quoted MIT warranty text', () => {
+  const { root, cleanup } = tempDir();
+  try {
+    writeFileSync(path.join(root, 'LICENSE'), [
+      'MIT License',
+      '',
+      'Copyright (c) 2026 Example',
+      '',
+      'Permission is hereby granted, free of charge, to any person obtaining a copy',
+      'of this software and associated documentation files (the "Software"), to deal',
+      'in the Software without restriction.',
+      '',
+      "THE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND.",
+    ].join('\n'));
+    assert.equal(detectLicense(root)?.spdx, 'MIT');
+  } finally {
+    cleanup();
+  }
 });
 
 test('python fixture reads PEP 621 metadata and console scripts', () => {

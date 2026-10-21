@@ -147,7 +147,7 @@ runs:
               "",
               `- Draft: \`${process.env.RF_DRAFT_PATH}\``,
               `- Sections needing changes: ${count}`,
-              "- README.md was not modified. Review the draft, then run `rf apply`.",
+              "- README.md was not modified. Review the draft, then run `readme-smith apply`.",
               "",
             ].join("\n"));
           }

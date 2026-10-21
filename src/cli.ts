@@ -16,7 +16,7 @@ const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url),
 const program = new Command();
 
 program
-  .name('rf')
+  .name('readme-smith')
   .description('Local-first README health doctor: deterministic facts, reviewable drafts, CI gates.')
   .version(pkg.version, '-v, --version', 'print the version')
   .helpOption('-h, --help', 'display help');

@@ -1,10 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fixture, tempFixture, tempDir } from './helpers.js';
 import { analyseReadme, analyseCodeCommands, parseReadme } from '../../src/readme/parse.js';
-import { scoreReadme } from '../../src/readme/score.js';
+import { computeFreshness, scoreReadme } from '../../src/readme/score.js';
 import { scanFacts } from '../../src/facts/index.js';
 import { defaultWeights } from '../../src/config.js';
 import type { FactSheet, PresetId } from '../../src/types.js';
@@ -88,6 +88,138 @@ test('parses Setext headings and ignores fences while scanning headings', () => 
   ]);
   assert.equal(parsed.codeBlocks.length, 1);
   assert.equal(parsed.sections.length, 1);
+});
+
+test('reads HTML headings and falls back to image alt text for a logo title', () => {
+  const parsed = parseReadme([
+    '<div align="center">',
+    '<h1>',
+    '<img src="media/logo.svg" alt="Chalk">',
+    '</h1>',
+    '</div>',
+    '',
+    'Terminal string styling done right.',
+    '',
+    '<h2>Install</h2>',
+    '',
+    '```sh',
+    'npm install chalk',
+    '```',
+  ].join('\n'));
+
+  assert.deepEqual(parsed.headings.map((h) => [h.level, h.text]), [
+    [1, 'Chalk'],
+    [2, 'Install'],
+  ]);
+  assert.equal(parsed.intro, 'Terminal string styling done right.');
+  assert.deepEqual(parsed.sections.map((s) => s.title), ['Install']);
+});
+
+test('a lowercase readme.md is a README too', () => {
+  const { root, cleanup } = tempFixture('node-cli');
+  try {
+    rmSync(path.join(root, 'README.md'));
+    writeFileSync(path.join(root, 'readme.md'), '# acme-tool\n\nA short introduction long enough to count.\n');
+    const facts = scanFacts({ root, skipGit: true });
+    const analysis = analyseReadme(root, facts, 'cli');
+    assert.equal(analysis.exists, true);
+    assert.equal(analysis.path, 'readme.md');
+    assert.equal(analysis.standard.title, true);
+  } finally {
+    cleanup();
+  }
+});
+
+test('platform environment variables are not reported as undocumented', () => {
+  const facts = scanFixture('node-cli');
+  const parsed = parseReadme([
+    '# acme-tool',
+    '',
+    '```sh',
+    'FORCE_COLOR=1 acme --help',
+    '```',
+    '',
+    'Set `NODE_ENV` before running.',
+  ].join('\n'));
+  const { envMentions } = analyseCodeCommands(parsed, facts);
+  assert.equal(envMentions.some((e) => e.name === 'FORCE_COLOR' || e.name === 'NODE_ENV'), false);
+});
+
+test('shell variable usage in examples is not a configuration claim', () => {
+  const facts = scanFixture('node-cli');
+  const parsed = parseReadme([
+    '# acme-tool',
+    '',
+    'Use POSIX syntax such as `$ENV_VAR`.',
+    '',
+    '```sh',
+    'echo "Hello $GREET"',
+    '```',
+  ].join('\n'));
+  const { envMentions } = analyseCodeCommands(parsed, facts);
+  assert.deepEqual(envMentions, []);
+});
+
+test('freshness compares README filenames case-insensitively', () => {
+  const facts = scanFixture('node-cli');
+  const analysis = analyseReadme(fixture('node-cli'), facts, 'cli');
+  const custom: FactSheet = {
+    ...facts,
+    manifests: [{ kind: 'npm', path: 'package.json' }],
+    git: {
+      ...facts.git,
+      isGit: true,
+      recentCommits: [
+        { hash: 'aaaaaaa', date: '2026-10-20T00:00:00Z', subject: 'docs: update readme', files: ['readme.md'] },
+        { hash: 'bbbbbbb', date: '2026-10-19T00:00:00Z', subject: 'chore: release', files: ['package.json'] },
+      ],
+    },
+    project: { ...facts.project, repository: { isGit: true, shallow: false } },
+  };
+  const result = computeFreshness(custom, { ...analysis, path: 'readme.md' }, fixture('node-cli'));
+  assert.equal(result.score, 10);
+  assert.deepEqual(result.issues, []);
+});
+
+test('a version-only manifest commit does not make the README stale', () => {
+  const facts = scanFixture('node-cli');
+  const analysis = analyseReadme(fixture('node-cli'), facts, 'cli');
+  const custom: FactSheet = {
+    ...facts,
+    manifests: [{ kind: 'npm', path: 'package.json' }],
+    git: {
+      ...facts.git,
+      isGit: true,
+      recentCommits: [
+        { hash: 'aaaaaaa', date: '2026-10-20T00:00:00Z', subject: '3.0.1', files: ['package.json'] },
+        { hash: 'bbbbbbb', date: '2026-10-19T00:00:00Z', subject: 'docs: refresh readme', files: ['README.md'] },
+      ],
+    },
+    project: { ...facts.project, repository: { isGit: true, shallow: false } },
+  };
+  const result = computeFreshness(custom, analysis, fixture('node-cli'));
+  assert.equal(result.score, 10);
+  assert.deepEqual(result.issues, []);
+});
+
+test('freshness is neutral on a shallow clone without README history', () => {
+  const facts = scanFixture('node-cli');
+  const analysis = analyseReadme(fixture('node-cli'), facts, 'cli');
+  const custom: FactSheet = {
+    ...facts,
+    manifests: [{ kind: 'npm', path: 'package.json' }],
+    git: {
+      ...facts.git,
+      isGit: true,
+      recentCommits: [
+        { hash: 'aaaaaaa', date: '2026-10-20T00:00:00Z', subject: 'chore: release', files: ['package.json'] },
+      ],
+    },
+    project: { ...facts.project, repository: { isGit: true, shallow: true } },
+  };
+  const result = computeFreshness(custom, analysis, fixture('node-cli'));
+  assert.equal(result.score, 10);
+  assert.deepEqual(result.issues, []);
 });
 
 test('detects English and Chinese READMEs', () => {

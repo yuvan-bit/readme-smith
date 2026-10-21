@@ -2,26 +2,42 @@
 
 本项目的重要变更都记录在这里。格式遵循 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)，版本号遵循 [Semantic Versioning](https://semver.org/)。
 
-## [未发布]
+## [0.3.0] — 2026-10-21
+
+把安装入口从源码构建改为 npm 包、以 GitHub 为主仓库的版本。重点降低安装门槛，并用真实开源仓库校准准确率。
 
 ### 新增
 
-- 新增 Gitee Go 流水线 `.workflow/master-pipeline.yml` 与 `.workflow/pr-pipeline.yml`：分别在 push 到 `master` 和向 `master` 发起或更新 PR 时，用 Node.js 22.14.0 运行 `npm ci && npm run ci`。Gitee Go 需在仓库「流水线」页面开通后才会执行。
-- 新增 `npm run ci`，在本地依次复现流水线的类型检查、覆盖率门禁、`doctor` 和 `check`。
-- 新增 `.gitee/ISSUE_TEMPLATE/` 的缺陷、功能与文档表单，以及 `.gitee/pull_request_template.md`；Gitee 会优先读取 `.gitee/` 而不是 `.github/`。
-- 新增 `SECURITY.md` 和 `CODE_OF_CONDUCT.md`，给出私下报告漏洞的流程与社区行为准则。
+- 提供 npm 分发包 `readme-smith`：`package.json` 只暴露一个可执行文件，`npm pack` 产物已通过干净安装验证；registry 同步后支持 `npm install -g readme-smith`、`npm install --save-dev readme-smith` 和 `npx readme-smith`，不再要求 `git clone` + `build` + `link`。
+- 新增 GitHub composite action 的 tag 用法 `yuvan-bit/readme-smith@v0.3.0`，与 npm 安装路径并存。
+- 新增真实仓库实测数据：`is-number` 97、`cross-env` 92、`chalk` 91、`express` 79；并给出 `pallets/click` 从 **74 分修复到 99 分** 的可复现前后对比。
+- 新增 `SECURITY.md` 实测：扫描事实表记录 `community.security`，治理测试验证支持版本、私下报告邮箱和 README 链接。
+- 新增权重归一化：配置可写任意正的相对值或只写部分维度，加载时用最大余数法归一化为总和 100 的整数。
+- 新增 HTML 标题解析（含多行 `<h1>` 和 logo 的 `alt` 文本）、小写 `readme.md` / `Readme.md` 识别、单引号 MIT 许可证文本识别，以及系统环境变量与 shell 示例变量的排除规则。
+- 新增 Gitee Go 流水线 `.workflow/master-pipeline.yml` 与 `.workflow/pr-pipeline.yml`：分别在 push 到 `master` 和向 `master` 发起或更新 PR 时，用 Node.js 22.14.0 运行 `npm ci && npm run ci`。需在 Gitee 仓库的「流水线」页面开通后才会执行。
+- 新增 `.gitee/ISSUE_TEMPLATE/` 的缺陷、功能与文档表单、`.gitee/pull_request_template.md`，以及 `CODE_OF_CONDUCT.md`；漏洞报告入口改为维护者邮箱。
 
 ### 变更
 
-- README 的 CI 章节改为以 Gitee Go 为主，说明流水线文件、触发条件、Node 版本与开通前提；GitHub Actions 明确标注为可选镜像，不再声称 Gitee 会执行 `.github/workflows/`。
-- 贡献指南改用 `npm run ci` 作为提交前检查，与 Gitee Go 流水线保持一致；架构地图补充 `.workflow/` 与 `.gitee/`。
-- `package.json` 增加 `homepage` 和 `bugs`，描述改为中英并列；文档主推 `readme-smith` 命令，保留 `rf` 作为短别名。
-- 为 `v0.1.0` 和 `v0.2.0` 补齐 git tag，本变更日志的版本链接改为指向真实 tag。
+- **GitHub 成为主仓库**：`repository`、`homepage`、`bugs`、文档链接、pre-commit 示例和版本链接全部指向 GitHub；Gitee 保留为镜像，Gitee Go 流水线仍需在 Gitee 侧开通。
+- **`rf` 不再是 npm 包的可执行文件**：`bin` 只保留 `readme-smith`，避免与 registry 上已有的 `rf` 包冲突；需要短命令的用户可以在 shell 中自行设置 `alias rf='readme-smith'`。
+- 权重配置从“必须合计 100，否则整块回退”改为自动归一化；部分权重继承预设，设为 `0` 可排除维度，只有全零或全非法才回退默认值。
+- README 的安装、快速开始、CI、故障排查和版本发布章节改为 GitHub/npm 优先，并明确 Gitee Go 当前未开通、没有实际流水线记录。
+- 支持版本范围更新为 `0.3.x`；`0.2.x` 及更早版本不再接收安全更新。
 
 ### 修复
 
-- 安全报告入口从公开 issue 列表改为维护者邮箱，避免漏洞被公开披露。
-- 修正了原本指向不存在 tag 的版本链接。
+- 修复 HTML 标题和小写 README 文件名导致的“无 H1 / README 不存在”误判。
+- 修复 `FORCE_COLOR`、`NODE_ENV` 等平台环境变量被当作项目未声明配置的误报；`$GREET`、`$ENV_VAR` 这类示例用法不再被当作配置声明。
+- 修复单引号 `'AS IS'` 的 MIT 许可证被识别为 Custom 的问题。
+- 修复浅克隆下把 README 误判为过期的问题；看不到 README 历史时新鲜度记为中性。
+- 修复纯版本号、release、bump、依赖更新等提交触发“README 过期”的误报。
+- 修复 `readme.md` 与 `README.md` 大小写不一致时新鲜度永远为 0 的问题。
+
+### 移除
+
+- npm 包中的 `rf` 可执行文件（历史版本仍可通过旧包使用）。
+- “权重必须合计 100”的硬性限制。
 
 ## [0.2.0] — 2026-10-21
 
@@ -72,6 +88,6 @@
 - 初始仓库扫描器和双语 README 生成原型。
 - 语言统计、清单检测和中英文模板。
 
-[未发布]: https://gitee.com/yuwan41064/readme-smith/compare/v0.2.0...master
-[0.2.0]: https://gitee.com/yuwan41064/readme-smith/tree/v0.2.0
-[0.1.0]: https://gitee.com/yuwan41064/readme-smith/tree/v0.1.0
+[0.3.0]: https://github.com/yuvan-bit/readme-smith/releases/tag/v0.3.0
+[0.2.0]: https://github.com/yuvan-bit/readme-smith/tree/v0.2.0
+[0.1.0]: https://github.com/yuvan-bit/readme-smith/tree/v0.1.0

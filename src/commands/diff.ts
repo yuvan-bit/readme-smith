@@ -25,7 +25,7 @@ export function runDiff(rawPath: string | undefined, options: DiffOptions): numb
       'README.draft.md not found.',
       'draft_missing',
       EXIT.ERROR,
-      'Run `rf draft` first; it never modifies README.md.',
+      'Run `readme-smith draft` first; it never modifies README.md.',
     );
   }
   const readme = readTextSafe(path.join(prepared.root, README_FILE)) ?? '';

@@ -4,7 +4,7 @@
 
 ## 开发环境
 
-运行时需要 Node.js 18.17 或更新版本；开发和测试建议使用 Node.js 22（与 `.workflow/` 中的 Gitee Go 流水线、GitHub Actions 工作流一致，`npm run test:coverage` 的覆盖率参数也要求 22+）。
+运行时需要 Node.js 18.17 或更新版本；开发和测试建议使用 Node.js 22（与 GitHub Actions 主 CI 和 Gitee Go 镜像流水线一致，`npm run test:coverage` 的覆盖率参数也要求 22+）。
 
 ```bash
 npm install
@@ -41,9 +41,9 @@ node dist/cli.js scan test/fixtures/node-cli
 | `src/draft/ai.ts` | 可选的 OpenAI 兼容文案改写，以及事实校验器。 |
 | `src/diff/structured.ts` | 章节级差异和统一摘录。 |
 | `src/commands/` | 每个 CLI 命令一个模块；退出码也在这里。 |
-| `.workflow/` | Gitee Go 的 master push 与 PR 流水线；两者都运行 `npm ci && npm run ci`。 |
-| `.gitee/` | Gitee issue 表单和拉取请求模板。 |
-| `.github/` | 可选的 GitHub Actions、issue 表单和拉取请求模板。 |
+| `.github/` | 主 CI：GitHub Actions、composite action、issue 表单和拉取请求模板。 |
+| `.workflow/` | Gitee Go 的 master push 与 PR 流水线镜像；两者都运行 `npm ci && npm run ci`。 |
+| `.gitee/` | Gitee 专用的 issue 表单和拉取请求模板。 |
 | `test/unit/` | 单元、黄金和端到端测试（编译到 `dist-test/`）。 |
 | `test/fixtures/`、`test/golden/` | 语言夹具和黄金事实快照。 |
 
@@ -78,10 +78,10 @@ node dist/cli.js scan test/fixtures/node-cli
 
 ## 修改评分或模板
 
-- 每条评分规则都需要测试。每个预设的权重仍必须合计为 100。
+- 每条评分规则都需要测试。预设的默认权重合计为 100；用户配置可以写任意相对值，由 `normalizeWeights()` 归一化为总和 100 的整数。修改归一化逻辑时请覆盖部分维度、全零和非法值。
 - 模板必须基于事实，并使用分析器识别的中英文标题（`Installation`/`安装`、`Usage`/`使用`、`Configuration`/`配置`、`License`/`许可证`）。
 - 没有缺失章节时，合并模式草稿必须逐字节返回输入。幂等性由测试覆盖；请保持这一点。
-- 如果修改内置模板，请对 `test/fixtures/node-cli`、`monorepo` 和 `dataset` 运行 CLI，并检查 `rf diff --show`。
+- 如果修改内置模板，请对 `test/fixtures/node-cli`、`monorepo` 和 `dataset` 运行 CLI，并检查 `readme-smith diff --show`。
 
 ## 提交和拉取请求
 
@@ -96,14 +96,16 @@ test(diff): cover insertion line numbers
 
 ## 持续集成
 
-Gitee Go 配置位于 `.workflow/`：push 到 `master` 触发 `master-pipeline.yml`，向 `master` 发起或更新 PR 触发 `pr-pipeline.yml`。两者都在 Node.js 22.14.0 上运行：
+主 CI 位于 `.github/workflows/`：`ci.yml` 在 push 到 `main`/`master` 和任意 PR 上运行类型检查、构建、覆盖率、doctor 和 check；`readme-check.yml` 在修改文档或清单的 PR 上用 composite action 做 changed-only 检查。
+
+Gitee Go 配置位于 `.workflow/`，作为镜像保留：push 到 `master` 触发 `master-pipeline.yml`，向 `master` 发起或更新 PR 触发 `pr-pipeline.yml`。两者都在 Node.js 22.14.0 上运行：
 
 ```bash
 npm ci
 npm run ci
 ```
 
-Gitee Go 是 Gitee 的增值服务，需要先在仓库的「流水线」页面开通；未开通时流水线不会执行，但本地命令仍然有效。GitHub Actions 的对应工作流位于 `.github/workflows/`，只在 GitHub 上运行。
+Gitee Go 是 Gitee 的增值服务，需要先在仓库的「流水线」页面开通；当前仓库尚未开通，因此没有 Gitee Go 的实际运行记录。本地命令和 GitHub Actions 不受影响。
 
 打开拉取请求之前，至少运行：
 
@@ -119,7 +121,7 @@ npm run ci
 
 - 你运行的命令（相关时加上 `--verbose`），
 - 退出码，
-- `rf scan --json` 中相关的事实 JSON（必要时遮盖路径），
+- `readme-smith scan --json` 中相关的事实 JSON（必要时遮盖路径），
 - 你期望的结果。
 
 请不要粘贴专有源码或凭据。最小夹具是最好的复现方式。安全漏洞不要提交公开 issue，请按 [SECURITY.md](SECURITY.md) 通过邮件私下报告。

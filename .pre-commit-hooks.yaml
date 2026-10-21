@@ -1,7 +1,7 @@
 - id: readme-smith
   name: readme-smith check
   description: 当 README.md 低于分数阈值或已落后于项目时失败。
-  entry: rf check
+  entry: readme-smith check
   args: ["--min-score", "80"]
   language: system
   pass_filenames: false

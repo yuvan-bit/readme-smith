@@ -336,7 +336,7 @@ function inferManifestKind(source: string): string {
   return source.endsWith('.gemspec') ? 'gemspec' : source;
 }
 
-/** JSON projection for `rf scan --json`: no absolute path, stable key order. */
+/** JSON projection for `readme-smith scan --json`: no absolute path, stable key order. */
 export function factsToJson(facts: FactSheet): string {
   return JSON.stringify(facts, null, 2);
 }

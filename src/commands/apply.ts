@@ -26,7 +26,7 @@ export function runApply(rawPath: string | undefined, options: ApplyOptions): nu
       'README.draft.md not found; nothing to apply.',
       'draft_missing',
       EXIT.ERROR,
-      'Run `rf draft` first.',
+      'Run `readme-smith draft` first.',
     );
   }
 

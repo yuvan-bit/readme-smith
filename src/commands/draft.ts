@@ -69,7 +69,7 @@ export async function runDraft(rawPath: string | undefined, options: DraftOption
     printWarnings(draft.warnings);
     log.success(`Wrote README.draft.md (${draft.language}${draft.aiUsed ? `, AI: ${draft.aiProvider}` : ', deterministic'})`);
     if (draft.addedSections.length > 0) log.detail(`Added sections: ${draft.addedSections.join(', ')}`);
-    log.detail('README.md was not modified. Review with `rf diff`, apply with `rf apply`.');
+    log.detail('README.md was not modified. Review with `readme-smith diff`, apply with `readme-smith apply`.');
   }
   return EXIT.OK;
 }

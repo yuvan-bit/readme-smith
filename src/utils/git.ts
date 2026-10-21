@@ -82,6 +82,7 @@ export function collectRepoInfo(root: string, fallbackName: string): RepoInfo {
 
   if (!git(root, ['rev-parse', '--is-inside-work-tree'])) return info;
   info.isGit = true;
+  info.shallow = git(root, ['rev-parse', '--is-shallow-repository']) === 'true';
 
   // Prefer the symbolic ref of HEAD; fall back to the remote's default.
   const branch =

@@ -41,7 +41,7 @@ body:
     attributes:
       label: 范围
       options:
-        - label: 该提议保持 README.md 只读，直到执行 `rf apply`。
+        - label: 该提议保持 README.md 只读，直到执行 `readme-smith apply`。
           required: true
         - label: 该提议默认不要求上传源码。
           required: true

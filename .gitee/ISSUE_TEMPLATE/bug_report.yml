@@ -7,12 +7,12 @@ body:
     attributes:
       value: |
         请不要包含凭据、专有源码或 `.env` 内容。
-        最小夹具或相关的 `rf scan --json` 事实块是最有用的复现材料。
+        最小夹具或相关的 `readme-smith scan --json` 事实块是最有用的复现材料。
   - type: input
     id: version
     attributes:
       label: readme-smith 版本
-      description: "`rf --version` 的输出。"
+      description: "`readme-smith --version` 的输出。"
     validations:
       required: true
   - type: input

@@ -71,6 +71,8 @@ export interface RepoInfo {
   name?: string;
   defaultBranch?: string;
   slug?: string;
+  /** True for shallow clones, where history-based freshness is unreliable. */
+  shallow?: boolean;
 }
 
 export interface LicenseInfo {

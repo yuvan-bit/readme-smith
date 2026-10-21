@@ -7,6 +7,30 @@ export const CONFIG_FILES = ['.readme-smith.yaml', '.readme-smith.yml'];
 
 const DIMENSIONS: DimensionId[] = ['completeness', 'usability', 'accuracy', 'readability', 'freshness'];
 
+/**
+ * Converts any positive weight mix into integers that sum to exactly 100.
+ * Relative weights such as 2/1/1/1/1 are therefore valid configuration.
+ */
+export function normalizeWeights(weights: Record<DimensionId, number>): Record<DimensionId, number> | null {
+  const total = DIMENSIONS.reduce((sum, dim) => sum + weights[dim], 0);
+  if (!Number.isFinite(total) || total <= 0) return null;
+
+  const parts = DIMENSIONS.map((dim) => {
+    const exact = (weights[dim] / total) * 100;
+    const floor = Math.floor(exact);
+    return { dim, weight: floor, remainder: exact - floor };
+  });
+  let remaining = 100 - parts.reduce((sum, part) => sum + part.weight, 0);
+  const byRemainder = [...parts].sort(
+    (a, b) => b.remainder - a.remainder || DIMENSIONS.indexOf(a.dim) - DIMENSIONS.indexOf(b.dim),
+  );
+  for (let i = 0; i < remaining; i += 1) byRemainder[i]!.weight += 1;
+
+  const normalized = {} as Record<DimensionId, number>;
+  for (const part of parts) normalized[part.dim] = part.weight;
+  return normalized;
+}
+
 export function defaultWeights(preset: PresetId | 'auto'): Record<DimensionId, number> {
   if (preset === 'dataset') {
     return { completeness: 40, usability: 20, accuracy: 20, readability: 10, freshness: 10 };
@@ -84,20 +108,28 @@ export function loadConfig(root: string): LoadedConfig {
 
   const rawWeights = (doc.weights ?? (doc.score as Record<string, unknown> | undefined)?.weights) as Record<string, unknown> | undefined;
   let weightsExplicit = false;
-  if (rawWeights && typeof rawWeights === 'object') {
-    const weights = { ...config.weights };
+  if (rawWeights && typeof rawWeights === 'object' && !Array.isArray(rawWeights)) {
+    const provided: Partial<Record<DimensionId, number>> = {};
+    let providedAny = false;
     for (const dim of DIMENSIONS) {
-      if (rawWeights[dim] === undefined) continue;
-      const n = Number(rawWeights[dim]);
-      if (Number.isFinite(n) && n >= 0 && n <= 100) weights[dim] = n;
-      else warnings.push(`${filename}: weight "${dim}" must be between 0 and 100.`);
+      const raw = rawWeights[dim];
+      if (raw === undefined) continue;
+      providedAny = true;
+      const n = typeof raw === 'number' ? raw : typeof raw === 'string' && raw.trim() ? Number(raw) : Number.NaN;
+      if (Number.isFinite(n) && n >= 0) provided[dim] = n;
+      else warnings.push(`${filename}: weight "${dim}" must be a finite number greater than or equal to 0.`);
     }
-    const sum = DIMENSIONS.reduce((s, d) => s + weights[d], 0);
-    if (Math.abs(sum - 100) < 0.01) {
-      config.weights = weights;
-      weightsExplicit = true;
+
+    if (Object.keys(provided).length === 0) {
+      if (providedAny) warnings.push(`${filename}: no usable weights; using preset defaults.`);
     } else {
-      warnings.push(`${filename}: weights must sum to 100 (got ${sum}); using defaults.`);
+      const normalized = normalizeWeights({ ...config.weights, ...provided });
+      if (normalized) {
+        config.weights = normalized;
+        weightsExplicit = true;
+      } else {
+        warnings.push(`${filename}: weights must contain at least one positive value; using preset defaults.`);
+      }
     }
   }
 
@@ -113,7 +145,7 @@ function asLanguage(value: unknown): LanguageSetting | undefined {
 }
 
 export function configTemplate(): string {
-  return `# readme-smith configuration — https://gitee.com/yuwan41064/readme-smith
+  return `# readme-smith configuration — https://github.com/yuvan-bit/readme-smith
 version: 1
 
 # Project preset: auto | cli | lib | web | monorepo | dataset
@@ -122,7 +154,7 @@ preset: auto
 # Draft language: auto (follow the current README) | en | zh
 language: auto
 
-# Minimum score for \`rf doctor\` and \`rf check\` to exit 0.
+# Minimum score for \`readme-smith doctor\` and \`readme-smith check\` to exit 0.
 minScore: 80
 
 # AI is optional. local = Ollama/OpenAI-compatible on this machine,
@@ -132,7 +164,8 @@ ai:
   baseUrl: null
   model: null
 
-# Weights must sum to 100.
+# Weights can be any relative values; they are normalized to 100.
+# Omitted dimensions inherit the preset defaults. Set a dimension to 0 to exclude it.
 weights:
   completeness: 35
   usability: 25

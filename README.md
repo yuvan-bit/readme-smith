@@ -3,9 +3,9 @@
 readme-smith 是一个本地优先的 README 健康检查工具。它只从仓库文件中提取可证明的事实，为现有 README 做五维评分，生成可审阅的 `README.draft.md`，并在 CI 中阻止 README 随代码腐化。
 
 - **默认离线。** 扫描、评分、草稿和检查都在本地完成，不需要账号，也不上传代码。
-- **不静默改写。** `rf draft` 只写 `README.draft.md`；只有显式执行 `rf apply` 才会更新 `README.md`，并先保留 `.README.bak.md`。
+- **不静默改写。** `readme-smith draft` 只写 `README.draft.md`；只有显式执行 `readme-smith apply` 才会更新 `README.md`，并先保留 `.README.bak.md`。
 - **不编造事实。** 命令、参数、环境变量和许可证都来自仓库证据；无法证明的信息标记为 `[verify]`，而不是猜一个看起来合理的值。
-- **可接入 CI。** `rf check` 同时校验评分和草稿差异，让过期的 README 在合并前失败，而不是在数月后误导新贡献者。
+- **可接入 CI。** `readme-smith check` 同时校验评分和草稿差异，让过期的 README 在合并前失败，而不是在数月后误导新贡献者。
 
 [快速开始](#快速开始) · [命令](#命令) · [评分](#评分) · [CI 集成](#ci-集成)
 
@@ -16,7 +16,7 @@ readme-smith 是一个本地优先的 README 健康检查工具。它只从仓�
 - [支持的项目](#支持的项目)
 - [安装](#安装)
 - [快速开始](#快速开始)
-- [真实诊断示例](#真实诊断示例)
+- [实测数据：真实仓库与修复前后](#实测数据真实仓库与修复前后)
 - [命令](#命令)
 - [草稿工作流](#草稿工作流)
 - [评分](#评分)
@@ -40,8 +40,8 @@ README 会悄悄腐化。脚本被重命名、参数被删除、安装命令失�
 readme-smith 把 README 当作需要对照仓库验证的文档：
 
 - **事实优先。** 名称、版本、脚本、二进制、入口、环境变量、配置文件、CI 任务、许可证和依赖数量都从文件中提取。无法证明的内容是 `null`，绝不猜测。
-- **只生成草稿，不直接改写。** `rf draft` 写入 `README.draft.md`。`README.md` 只会由 `rf apply` 在预览并备份之后修改。
-- **为腐化设置 CI 门禁。** `rf check` 把评分与确定性草稿差异结合起来，让过期的 README 在拉取请求中失败，而不是漂移数月。
+- **只生成草稿，不直接改写。** `readme-smith draft` 写入 `README.draft.md`。`README.md` 只会由 `readme-smith apply` 在预览并备份之后修改。
+- **为腐化设置 CI 门禁。** `readme-smith check` 把评分与确定性草稿差异结合起来，让过期的 README 在拉取请求中失败，而不是漂移数月。
 
 这个工具刻意保持窄范围：它不生成网站、不改写你的标题风格、不做安全审计，也不翻译已提交的 README。
 
@@ -86,97 +86,134 @@ readme-smith 把 README 当作需要对照仓库验证的文档：
 
 需要 Node.js 18.17 或更新版本。Git 是可选的，但启用新鲜度检查和仓库链接。
 
-项目尚未发布到 npm registry，请从源码安装：
+```bash
+npm install -g readme-smith
+readme-smith --version
+```
+
+> 0.3.0 的 tarball 已通过打包和干净安装验证。若 npm registry 上的 readme-smith 尚未显示 `0.3.0`，请使用下方的源码安装。
+
+不想全局安装时，用 `npx` 直接运行：
 
 ```bash
-git clone https://gitee.com/yuwan41064/readme-smith.git
+npx readme-smith doctor .
+```
+
+也可以作为开发依赖装进项目，供 CI 或 `package.json` 脚本调用：
+
+```bash
+npm install --save-dev readme-smith
+npx readme-smith check .
+```
+
+> **关于短命令 `rf`**：npm 包只安装 `readme-smith` 一个可执行文件。`rf` 已被 registry 上的其它包占用，本包不再分发它，避免覆盖或命令冲突。如果你喜欢更短的输入，可以在自己的 shell 配置里加一行别名：
+>
+> ```bash
+> alias rf='readme-smith'
+> ```
+>
+> 这只是本机别名，不会安装第二个 npm 包。
+
+从源码安装（贡献者，或需要使用未发布的提交时）：
+
+```bash
+git clone https://github.com/yuvan-bit/readme-smith.git
 cd readme-smith
-npm install
+npm ci
 npm run build
 npm link
-```
-
-`npm link` 会把 `readme-smith`（推荐）和短别名 `rf` 都暴露到 PATH。npm 上已存在名为 `rf` 的其它包，如果发生命令冲突，请使用 `readme-smith`。如果你不想 link，也可以直接从检出目录运行 CLI：
-
-```bash
-node /path/to/readme-smith/dist/cli.js doctor /path/to/project
-```
-
-也可以把检出目录全局安装：
-
-```bash
-npm install -g .
 ```
 
 ## 快速开始
 
 ```bash
-rf init                 # 可选：写入 .readme-smith.yaml
-rf scan .               # 以 JSON 输出确定性事实
-rf doctor .             # 五维评分和缺失项
-rf draft . --ai off     # 写入 README.draft.md，不动 README.md
-rf diff . --show        # 章节级差异和统一摘录
-rf apply . --dry-run    # 预览写入结果
-rf apply .              # 更新 README.md，保留 .README.bak.md
-rf check .              # CI 门禁：评分加草稿差异
+readme-smith init                 # 可选：写入 .readme-smith.yaml
+readme-smith scan .               # 以 JSON 输出确定性事实
+readme-smith doctor .             # 五维评分和缺失项
+readme-smith draft . --ai off     # 写入 README.draft.md，不动 README.md
+readme-smith diff . --show        # 章节级差异和统一摘录
+readme-smith apply . --dry-run    # 预览写入结果
+readme-smith apply .              # 更新 README.md，保留 .README.bak.md
+readme-smith check .              # CI 门禁：评分加草稿差异
 ```
 
-示例中的 `rf` 是 `readme-smith` 的短别名，二者完全等价。`scan` 始终以 JSON 打印事实表。`doctor` 告诉你缺什么。`draft` 提出一份文档。`diff` 展示章节级变化。`apply` 写入草稿并保留备份。`check` 从不写草稿，也不修改 README。
+`scan` 始终以 JSON 打印事实表。`doctor` 告诉你缺什么。`draft` 提出一份文档。`diff` 展示章节级变化。`apply` 写入草稿并保留备份。`check` 从不写草稿，也不修改 README。
 
 如果项目类型无法识别，命令会以退出码 `2` 结束，并列出它查找过的清单文件。你可以用 `--preset cli|lib|web|monorepo|dataset` 强制指定模板。
 
-## 真实诊断示例
+## 实测数据：真实仓库与修复前后
 
-假设某个仓库的 README 提到了一个不存在的脚本，`rf doctor` 会精确报告问题所在行：
+以下分数不是示意值，而是用 `readme-smith doctor <path> --json --ai off` 在 2026-10-21 实际测得的。每个仓库用 `git clone --depth 1` 检出并固定到表中的提交；阈值使用默认的 `80`。
 
-```output
-$ rf doctor .
-README health: 46/100 (threshold 80) — FAIL
-  Completeness    18/35
-    - [missing_install] No install or setup section.
-    - [missing_license_section] A MIT licence exists in the repository but the README has no licence section.
-    - [missing_contributing] A CONTRIBUTING file exists but the README does not link to it.
-    - [missing_demo] A CLI/UI project should show a screenshot, GIF, terminal recording or console example.
-  Usability        8/25
-    - [command_drift] 1 documented command(s) do not match the manifest scripts.
-  Accuracy         0/20
-    - [command_not_found] 1 command(s) in the README do not exist in the manifest scripts.
-    - [env_not_found] 1 environment variable(s) mentioned in the README were not found in the repository.
-    - [command_not_found] ACME_SECRET=abc npm run deploy cannot run: script "deploy" is not declared in the manifest. (line 7)
-    - [env_not_found] Environment variable ACME_SECRET is mentioned but does not exist in repository sources. (line 7)
-  Readability     10/10
-  Freshness       10/10
+| 真实仓库 | 固定提交 | 分数 | 结果 | 主要发现 |
+| --- | --- | --- | --- | --- |
+| [`jonschlinkert/is-number`](https://github.com/jonschlinkert/is-number) | `98e8ff1` | **97** | 通过 | 1 个代码块无语言标记；章节较多但没有目录 |
+| [`kentcdodds/cross-env`](https://github.com/kentcdodds/cross-env) | `9951937` | **92** | 通过 | 未在 README 中链接 `CONTRIBUTING.md`；缺少演示；2 个代码块无语言标记；没有目录 |
+| [`chalk/chalk`](https://github.com/chalk/chalk) | `47fc05a` | **91** | 通过 | 仓库有 MIT LICENSE，但 README 没有许可证章节；未链接贡献指南；没有目录 |
+| [`expressjs/express`](https://github.com/expressjs/express) | `0dee2c5` | **79** | 未通过 | README 没有 H1（仅 logo）；Quick Start 中的 npm start 不在本仓库的 `package.json` 脚本中 |
+
+本仓库自身也跑同一套门禁：在 0.3.0 发布前，`readme-smith doctor . --min-score 85` 与 `readme-smith check . --min-score 85` 都是 **100/100**。
+
+几点说明，避免把分数当成玄学：
+
+- 浅克隆看不到完整提交历史，因此工具在无法判断 README 历史时把新鲜度记为中性满分，而不是猜一个“过期”。表中的新鲜度均为 10/10。
+- Express 的 npm start 属于 `express-generator` 生成的应用，不是这个仓库自己的脚本。工具按“README 声明的命令必须能在本仓库清单中找到”判定，因此把它标为命令漂移；这类上下文歧义会以行列号原样展示，交由人判断。
+- 除了 git 相关的新鲜度，评分和草稿都是确定性的；相同仓库状态会得到相同结果。
+
+### 修复前后：Click
+
+以 [`pallets/click`](https://github.com/pallets/click)（提交 `2247b35`）的 README 为例，在副本上执行确定性合并草稿，不启用 AI：
+
+```bash
+readme-smith doctor /tmp/click-demo --ai off     # 74/100
+readme-smith draft  /tmp/click-demo --ai off --lang en
+readme-smith apply  /tmp/click-demo
+readme-smith doctor /tmp/click-demo --ai off     # 99/100
 ```
 
-第一份草稿只合并缺失的章节，逐字节保留你现有的文案：
+| 阶段 | 总分 | 完整性 | 可用性 | 准确性 | 可读性 | 新鲜度 |
+| --- | --- | --- | --- | --- | --- | --- |
+| 修复前 | **74** | 22/35 | 13/25 | 20/20 | 9/10 | 10/10 |
+| 修复后 | **99** | 35/35 | 25/25 | 20/20 | 9/10 | 10/10 |
 
-```console
-$ rf draft . --ai off
-[ok] Wrote README.draft.md (en, deterministic)
-  - Added sections: Installation, Contributing, License
-  - README.md was not modified. Review with `rf diff`, apply with `rf apply`.
-```
+修复前工具指出的问题都是真实存在的：README 没有安装/环境准备章节、没有许可证章节（仓库实际是 BSD-3-Clause），并有 1 个代码块没有语言标记。合并草稿只补缺失章节和来自清单的安装命令，不改写原有文案；修复后只剩那个无语言标记的代码块，因此可读性仍是 9/10——工具没有把 99 分伪装成 100 分。
 
 合并模式刻意不改写已有命令。如果想用基于事实的全新文档替换过期文案，请请求完整草稿：
 
 ```bash
-rf draft . --force --ai off
-rf diff . --show
-rf apply .
-rf doctor .
+readme-smith draft . --force --ai off
+readme-smith diff . --show
+readme-smith apply .
+readme-smith doctor .
 ```
+
+### SECURITY.md 实测
+
+本仓库自带一份真实的 [SECURITY.md](SECURITY.md)。扫描器会把它记录为可核验的社区文件，而不是只存在于文档里的承诺：
+
+```console
+$ readme-smith scan . --json
+"community": {
+  "contributing": true,
+  "changelog": true,
+  "security": true,
+  ...
+}
+```
+
+README 的「安全与隐私」章节用 `mailto:` 指向维护者邮箱，并链接 `SECURITY.md`，不提供公开 issue 作为漏洞入口。`test/unit/governance.test.ts` 会验证文件存在、支持版本、私下报告邮箱和 README 链接；运行 `npm test` 即可复现。
 
 ## 命令
 
 | 命令 | 作用 | 退出码 |
 | --- | --- | --- |
-| `rf scan [path]` | 提取确定性事实表并打印 JSON。 | `0` 成功，`2` 项目类型无法识别 |
-| `rf draft [path]` | 写入 `README.draft.md`；绝不修改 `README.md`。 | `0` 成功，`2` 扫描/类型失败 |
-| `rf diff [path]` | 逐章节比较 `README.md` 与草稿。 | `0` 完全一致，`1` 有差异，`2` 错误或草稿缺失（与 `git diff --exit-code` 一致） |
-| `rf doctor [path]` | 评分完整性、可用性、准确性、可读性和新鲜度。 | `0` 通过，`1` 低于阈值，`2` 执行错误 |
-| `rf check [path]` | 为 CI 运行 doctor 加确定性草稿差异；`--changed` 额外检查受影响的工作区包。 | `0` 通过，`1` 失败，`2` 错误 |
-| `rf apply [path]` | 把草稿复制到 `README.md`，并创建备份。 | `0` 成功，`2` 草稿缺失或写入失败 |
-| `rf init [path]` | 写入带注释的 `.readme-smith.yaml`。 | `0` 成功 |
+| `readme-smith scan [path]` | 提取确定性事实表并打印 JSON。 | `0` 成功，`2` 项目类型无法识别 |
+| `readme-smith draft [path]` | 写入 `README.draft.md`；绝不修改 `README.md`。 | `0` 成功，`2` 扫描/类型失败 |
+| `readme-smith diff [path]` | 逐章节比较 `README.md` 与草稿。 | `0` 完全一致，`1` 有差异，`2` 错误或草稿缺失（与 `git diff --exit-code` 一致） |
+| `readme-smith doctor [path]` | 评分完整性、可用性、准确性、可读性和新鲜度。 | `0` 通过，`1` 低于阈值，`2` 执行错误 |
+| `readme-smith check [path]` | 为 CI 运行 doctor 加确定性草稿差异；`--changed` 额外检查受影响的工作区包。 | `0` 通过，`1` 失败，`2` 错误 |
+| `readme-smith apply [path]` | 把草稿复制到 `README.md`，并创建备份。 | `0` 成功，`2` 草稿缺失或写入失败 |
+| `readme-smith init [path]` | 写入带注释的 `.readme-smith.yaml`。 | `0` 成功 |
 
 所有命令都接受仓库路径（默认当前目录）以及下面的全局选项。
 
@@ -203,7 +240,7 @@ rf doctor .
 
 ## 草稿工作流
 
-`rf draft` 有两种模式：
+`readme-smith draft` 有两种模式：
 
 - **合并模式**（README 已存在且语言未变化时的默认模式）：只追加缺失的章节。现有标题、文案和代码逐字节保留。
 - **完整草稿**（新 README、`--force` 或语言变化）：预设或自定义模板基于事实渲染完整文档。只有此模式才可能使用 AI 文案，且仅限简介、最多四条功能要点，以及使用章节的引导句。
@@ -211,13 +248,13 @@ rf doctor .
 审阅和应用是两个独立步骤：
 
 ```bash
-rf draft .
-rf diff . --show       # 完全一致时退出 0，有差异时退出 1（与 git diff --exit-code 一致）
-rf apply . --dry-run   # 退出 0；不写入，也不创建备份
-rf apply .             # 备份到 .README.bak.md，然后替换 README.md
+readme-smith draft .
+readme-smith diff . --show       # 完全一致时退出 0，有差异时退出 1（与 git diff --exit-code 一致）
+readme-smith apply . --dry-run   # 退出 0；不写入，也不创建备份
+readme-smith apply .             # 备份到 .README.bak.md，然后替换 README.md
 ```
 
-草稿缺失或不可读时，`rf diff` 退出 `2`。没有草稿时，`rf apply` 拒绝运行。应用完全相同的草稿是空操作。
+草稿缺失或不可读时，`readme-smith diff` 退出 `2`。没有草稿时，`readme-smith apply` 拒绝运行。应用完全相同的草稿是空操作。
 
 ## 评分
 
@@ -233,11 +270,15 @@ rf apply .             # 备份到 .README.bak.md，然后替换 README.md
 
 预设会按上文调整权重。在配置中设置 `minScore` 或传入 `--min-score`。分数低于阈值时，`doctor` 和 `check` 退出 `1`。
 
+### 权重可以是相对值
+
+配置里的权重不必凑成 100。可以只写相对比例，例如 `2/1/1/1/1`、`3/2/2/1/1`，工具会用最大余数法把它们归一化为总和正好 100 的整数，因此满分仍然可以到达 100。只写部分维度时，其余维度继承预设默认值；把某个维度设为 `0` 可以把它从评分中排除。只有当所有权重都非法或全部为 0 时，整个权重块才回退到预设默认值，并在 stderr 给出警告。
+
 `check` 比 `doctor` 更严格：项目类型未知、README 缺失、分数低于阈值，**或**已提交的 README 与确定性草稿不同，都会失败。最后一条规则正是用来抓住已经偏离当前事实的文案。
 
 ## 配置
 
-运行 `rf init` 创建 `.readme-smith.yaml`，然后只修改你需要的部分。该文件是可选的，默认值相同。`.readme-smith.yaml` 和 `.readme-smith.yml` 都会被识别。
+运行 `readme-smith init` 创建 `.readme-smith.yaml`，然后只修改你需要的部分。该文件是可选的，默认值相同。`.readme-smith.yaml` 和 `.readme-smith.yml` 都会被识别。
 
 ```yaml
 version: 1
@@ -250,7 +291,7 @@ ai:
   baseUrl: null       # OpenAI 兼容端点
   model: null         # 本地默认 llama3.2，openai 默认 gpt-4o-mini
 
-weights:              # 必须合计为 100
+weights:              # 任意相对值，会自动归一化到 100；设为 0 可排除
   completeness: 35
   usability: 25
   accuracy: 20
@@ -262,7 +303,7 @@ weights:              # 必须合计为 100
 | --- | --- |
 | `OPENAI_API_KEY` | 仅在你显式选择 `--ai openai` 时使用。本地或离线运行绝不会读取它。 |
 
-配置警告会打印到 stderr，绝不中止运行；无效值回退到默认值。特别是，合计不为 `100` 的权重会作为整体被忽略。
+配置警告会打印到 stderr，绝不中止运行；无效值回退到默认值。权重会自动归一化，合计不必为 `100`；只有全部为 0 或全部非法时才整体回退到预设默认值。
 
 ## AI 边界
 
@@ -272,11 +313,11 @@ AI 是可选的，且范围很窄。它把事实块改写成三段文案：一�
 | --- | --- |
 | `local`（默认） | 与 `http://127.0.0.1:11434/v1` 的 OpenAI 兼容服务器通信（默认 Ollama）。不可用时回退到确定性模板并给出警告。 |
 | `openai` | 显式选择云端。需要 `OPENAI_API_KEY`。事实块是唯一发送的项目数据。 |
-| `off` | 不访问网络。所有内容都由事实渲染。`rf check` 始终使用此模式。 |
+| `off` | 不访问网络。所有内容都由事实渲染。`readme-smith check` 始终使用此模式。 |
 
 每个 AI 字段都会独立对照事实表验证。未声明的脚本、未知环境变量、不支持的参数、错误的许可证声明、未知 URL、作者和版本声明都会被拒绝。被拒绝的字段会被丢弃，其余字段保留，并由确定性模板文案填补该字段；如果三个字段全部失败，整个响应会被丢弃并给出警告。缺失的事实会变成 `[verify]` 标记，而不是听起来合理的猜测。
 
-AI 绝不会用于合并模式或 `rf check`；请求 AI 需要 `--force`（或新建/语言变化的 README）。
+AI 绝不会用于合并模式或 `readme-smith check`；请求 AI 需要 `--force`（或新建/语言变化的 README）。
 
 ## 自定义模板
 
@@ -301,43 +342,24 @@ AI 绝不会用于合并模式或 `rf check`；请求 AI 需要 `--force`（或�
 
 ## CI 集成
 
-CLI 与 CI 平台无关。本仓库附带 Gitee Go 流水线，并保留可选的 GitHub Actions 工作流。
-
-### Gitee Go
-
-`.workflow/` 中定义了两条流水线：
-
-| 文件 | 触发条件 | 用途 |
-| --- | --- | --- |
-| `.workflow/master-pipeline.yml` | push 到 `master` | 主干验证 |
-| `.workflow/pr-pipeline.yml` | 向 `master` 发起或更新 PR | 合并前验证 |
-
-两条流水线都在 Node.js 22.14.0 上执行：
-
-```bash
-npm ci
-npm run ci
-```
-
-`npm run ci` 是本地等价命令，依次运行类型检查、带覆盖率门禁的测试、`doctor` 和 `check`：
-
-```bash
-npm run typecheck
-npm run test:coverage
-node dist/cli.js doctor . --min-score 85
-node dist/cli.js check . --min-score 85
-```
-
-> Gitee Go 是 Gitee 的增值服务，需要先在仓库的「流水线」页面开通，配置好的流水线才会执行。未开通时 `.workflow/` 会保留在仓库中，可在本地或任意 CI 中运行上述命令获得相同结果。
+CLI 与 CI 平台无关。仓库以 GitHub Actions 为主，Gitee Go 配置作为镜像保留。
 
 ### GitHub Actions
 
-`.github/workflows/` 中的工作流只在 GitHub 上执行；Gitee 不会读取该目录。仓库附带 GitHub composite action（`action.yml`），支持两种模式：
+`.github/workflows/` 中包含三条工作流：
 
-- `check` 运行 `rf check`，在分数过低或草稿过期时使任务失败。结果写入 GitHub 步骤摘要。
+| 工作流 | 触发条件 | 用途 |
+| --- | --- | --- |
+| `ci.yml` | push 到 `main`/`master`，以及任意 PR | 在 Node.js 22 上运行 `npm ci`、类型检查、构建、覆盖率门禁，并以 `--min-score 85` 运行 `doctor` 和 `check` |
+| `readme-check.yml` | 修改 README、清单或工作流的 PR | 用仓库自带的 composite action 运行 changed-only 检查，默认阈值 `80` |
+| `readme-proposal.yml` | 手动触发 | 生成 `README.draft.md`，并创建可审阅的拉取请求；不会直接修改 `README.md` |
+
+仓库附带 composite action（`action.yml`），支持两种模式：
+
+- `check` 运行 `readme-smith check`，在分数过低或草稿过期时使任务失败。结果写入 GitHub 步骤摘要。
 - `proposal` 写入 `README.draft.md`，报告有多少章节需要处理，并保持 `README.md` 不变。随附的 `README proposal` 工作流随后从草稿创建可审阅的拉取请求；是否合并仍由人决定。
 
-在 GitHub 上，随附工作流使用本地 action：
+本仓库的 `readme-check.yml` 使用本地 action：
 
 ```yaml
 name: README check
@@ -359,24 +381,52 @@ jobs:
           base: ${{ github.event.pull_request.base.sha }}
 ```
 
+其他仓库可以直接引用带 tag 的 action：
+
+```yaml
+      - uses: yuvan-bit/readme-smith@v0.3.0
+        with:
+          mode: check
+          min-score: "80"
+```
+
 使用 `changed-only: "true"` 时，根 README 仍会被检查，并且每个在 `base` 与 `HEAD` 之间清单或包 README 发生变化的工作区包，都会用根阈值和预设自动检测进行评估。action 通过 `affected-packages` 暴露被评估的包数量，`--json` 会在 `affected` 下报告每个包。对于拉取请求，请把 `base` 设为 PR 的 base SHA；否则默认使用 `HEAD^`。
 
-action 的输入是 `mode`、`path`、`min-score`、`lang`、`ai`、`changed-only` 和 `base`。只有 `check` 模式使用 `changed-only` 和 `base`。本仓库的 Gitee Go 流水线与 GitHub Actions 工作流都使用 `--min-score 85`，比 CLI 和 action 的默认值 `80` 更严格，为合并前的评分波动留出余量；其它项目可以按需统一为 `80`。
+action 的输入是 `mode`、`path`、`min-score`、`lang`、`ai`、`changed-only` 和 `base`。只有 `check` 模式使用 `changed-only` 和 `base`。本仓库的主 CI 使用 `--min-score 85`，比 CLI、action 和 `readme-check.yml` 的默认值 `80` 更严格，为合并前的评分波动留出余量；其它项目可以按需统一为 `80`。
 
-action 会从检出的源码构建 CLI，因此不需要 npm 发布。对于其他仓库，请在任务中安装 CLI 并直接运行；CLI 与 CI 平台无关：
+action 会从检出的源码构建 CLI，因此 action 本身不依赖 npm 发布。对于其他仓库，也可以直接安装 CLI：
 
 ```bash
-npm ci
-npm run build
-node dist/cli.js check . --min-score 80
+npm install --save-dev readme-smith
+npx readme-smith check . --min-score 80
 ```
+
+`npm run ci` 在本地复现主 CI 的检查：
+
+```bash
+npm run typecheck
+npm run test:coverage
+node dist/cli.js doctor . --min-score 85
+node dist/cli.js check . --min-score 85
+```
+
+### Gitee Go（镜像配置，待开通）
+
+`.workflow/` 中定义了两条与主 CI 等价的流水线：
+
+| 文件 | 触发条件 | 用途 |
+| --- | --- | --- |
+| `.workflow/master-pipeline.yml` | push 到 `master` | 主干验证 |
+| `.workflow/pr-pipeline.yml` | 向 `master` 发起或更新 PR | 合并前验证 |
+
+两条流水线都在 Node.js 22.14.0 上执行 `npm ci && npm run ci`。Gitee Go 是 Gitee 的增值服务，需要先在仓库的「流水线」页面开通；**当前尚未开通，因此没有 Gitee Go 的实际运行记录**。在开通前，流水线文件只是可审阅的镜像配置，本地和 GitHub Actions 的结果不受影响。
 
 用于 pre-commit 时，安装 CLI 并添加钩子：
 
 ```yaml
 repos:
-  - repo: https://gitee.com/yuwan41064/readme-smith
-    rev: master
+  - repo: https://github.com/yuvan-bit/readme-smith
+    rev: v0.3.0
     hooks:
       - id: readme-smith
         args: ["--min-score", "80"]
@@ -438,13 +488,13 @@ console.log(draft.markdown);
 | 症状 | 原因与修复 |
 | --- | --- |
 | 退出码 `2`，提示 “project type is unknown” | 添加受支持的清单文件，或用 `--preset` 强制指定。 |
-| `doctor` 通过但 `check` 失败 | `check` 还要求 README 与确定性草稿一致。运行 `rf draft`，审阅 `rf diff`，然后 `rf apply`；仅在有意例外时使用 `#rf-skip`。 |
-| 草稿添加了章节，但错误的命令仍在 | 合并模式保留现有文案。请自行修改，或用 `rf draft . --force` 生成完整草稿。 |
+| `doctor` 通过但 `check` 失败 | `check` 还要求 README 与确定性草稿一致。运行 `readme-smith draft`，审阅 `readme-smith diff`，然后 `readme-smith apply`；仅在有意例外时使用 `#rf-skip`。 |
+| 草稿添加了章节，但错误的命令仍在 | 合并模式保留现有文案。请自行修改，或用 `readme-smith draft . --force` 生成完整草稿。 |
 | AI 警告后端不可用 | 启动本地 OpenAI 兼容服务器、配置 `ai.baseUrl`，或使用 `--ai off` 获得确定性输出。 |
-| CI 上新鲜度看起来不对 | 浅克隆隐藏历史。设置 `fetch-depth: 2` 或更深。 |
+| CI 上新鲜度看起来不对 | 浅克隆隐藏历史。看不到 README 历史时工具会把新鲜度记为中性，而不是误报过期；需要精确判断时设置 `fetch-depth: 2` 或更深。 |
 | `check --changed` 以 `git_base_not_found` 退出 `2` | 比较修订在检出中不存在。请获取 PR 基准（或传入有效的 `--base`）。 |
-| 配置警告权重问题 | 五个权重必须合计为 `100`；否则整个权重块回退到默认值。 |
-| `diff` 退出 `1` | README 与草稿之间存在差异。运行 `rf diff . --show` 查看章节摘要与统一摘录。 |
+| 配置警告权重问题 | 权重可以是任意相对值，会自动归一化到 100；只有全部为 0 或全部非法时才回退默认值。 |
+| `diff` 退出 `1` | README 与草稿之间存在差异。运行 `readme-smith diff . --show` 查看章节摘要与统一摘录。 |
 | `diff` 退出 `0` | README 与草稿完全一致。这是“已经同步”的情况。 |
 
 ## 项目结构
@@ -455,9 +505,9 @@ console.log(draft.markdown);
 - `src/diff/` — 章节级差异和统一摘录。
 - `src/ci/` — 从变更文件到受影响工作区包的确定性映射。
 - `src/commands/` — 每个 CLI 命令一个模块，包括退出码。
-- `.workflow/` — Gitee Go 主干与 PR 流水线。
-- `.gitee/` — Gitee issue 表单和拉取请求模板。
-- `.github/` — 可选的 GitHub Actions、issue 表单和拉取请求模板。
+- `.github/` — 主 CI：GitHub Actions、composite action 示例、issue 表单和拉取请求模板。
+- `.workflow/` — Gitee Go 主干与 PR 流水线的镜像配置（待开通）。
+- `.gitee/` — Gitee 专用的 issue 表单和拉取请求模板。
 - `test/unit/` — 单元、黄金和端到端测试。
 - `test/fixtures/` 和 `test/golden/` — 语言夹具和黄金事实快照。
 
@@ -470,13 +520,17 @@ console.log(draft.markdown);
 | `npm test` | 运行 Node 测试套件 |
 | `npm run test:coverage` | 带行、分支和函数覆盖率门禁运行测试（Node.js 22+） |
 | `npm run typecheck` | 只做类型检查，不产出文件 |
-| `npm run ci` | 本地运行与 Gitee Go 流水线相同的类型检查、覆盖率、doctor 和 check |
+| `npm run ci` | 本地运行与 GitHub Actions 主 CI 相同的类型检查、覆盖率、doctor 和 check |
 | `npm run dev` | 变更时重新构建 |
 | `npm run clean` | 删除 `dist/` 和 `dist-test/` |
 | `npm run self:doctor` | 为本仓库评分 |
 | `npm run self:check` | 对本仓库运行 CI 门禁 |
 
-测试套件覆盖九个夹具（Node、Python、Rust、Go、Ruby、单仓库、Web、数据集和一个无法识别的项目）、黄金事实表、评分、合并幂等性、差异语义、使用本地桩的 AI 校验、受影响包检测，以及每个 CLI 退出码。`npm run test:coverage` 强制执行至少 80% 行覆盖、70% 分支覆盖和 80% 函数覆盖；`npm run ci`、Gitee Go 流水线（开通后）和 GitHub Actions 工作流都会调用同一命令。
+测试套件覆盖九个夹具（Node、Python、Rust、Go、Ruby、单仓库、Web、数据集和一个无法识别的项目）、黄金事实表、评分、权重归一化、HTML/大小写 README 解析、合并幂等性、差异语义、使用本地桩的 AI 校验、受影响包检测，以及每个 CLI 退出码。`npm run test:coverage` 强制执行至少 80% 行覆盖、70% 分支覆盖和 80% 函数覆盖；`npm run ci` 和 GitHub Actions 主 CI 都会调用同一命令。
+
+### 版本与发布
+
+版本号遵循 [Semantic Versioning](https://semver.org/)。每个发布版本都有对应的 `vX.Y.Z` git tag、GitHub Release 和 [CHANGELOG.md](CHANGELOG.md) 条目；变更日志按“新增 / 变更 / 修复 / 移除”分类，说明该版本实际改了什么。当前版本为 **0.3.0**：npm 包已打包并验证，registry 同步状态以 npm 上的 readme-smith 页面为准；GitHub 主仓库、权重归一化、真实仓库实测和 `rf` 命令移除都记录在该条目中。
 
 ## 贡献
 

@@ -42,9 +42,10 @@ test('--version and --help are available', () => {
   try {
     const version = run(['--version'], root);
     assert.equal(version.status, 0);
-    assert.equal(version.stdout.trim(), '0.2.0');
+    assert.equal(version.stdout.trim(), '0.3.0');
     const help = run(['--help'], root);
     assert.equal(help.status, 0);
+    assert.match(help.stdout, /Usage: readme-smith/);
     assert.match(help.stdout, /Local-first README health doctor/);
     assert.match(help.stdout, /draft/);
     assert.match(help.stdout, /check/);

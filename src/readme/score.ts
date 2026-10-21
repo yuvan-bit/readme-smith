@@ -51,7 +51,7 @@ export function scoreReadme(input: ScoreInput): DoctorReport {
     threshold: input.threshold,
     passed: score >= input.threshold,
     readme: {
-      path: README_FILE,
+      path: analysis.path ?? README_FILE,
       exists: analysis.exists,
       lines: analysis.lines,
       language: analysis.language,
@@ -288,15 +288,25 @@ export function computeFreshness(facts: FactSheet, analysis: ReadmeAnalysis, roo
   if (!facts.git.isGit) {
     return { score: max, max, issues: [] };
   }
-  const manifestPaths = new Set(facts.manifests.map((m) => m.path));
+  const manifestPaths = new Set(facts.manifests.map((m) => m.path.toLowerCase()));
   if (manifestPaths.size === 0) {
     return { score: max, max, issues: [] };
   }
+  const readmePath = analysis.path ?? README_FILE;
+  const readmeName = path.posix.basename(readmePath.replace(/\\/g, '/')).toLowerCase();
   const commits = facts.git.recentCommits;
-  const readmeIndex = commits.findIndex((c) => c.files.includes(README_FILE));
-  const manifestIndex = commits.findIndex((c) => c.files.some((f) => manifestPaths.has(f) || /(^|\/)(package\.json|pyproject\.toml|setup\.py|setup\.cfg|Cargo\.toml|go\.mod|Gemfile|.*\.gemspec)$/.test(f)));
+  // Git reports the committed case (readme.md, Readme.md); comparing exact
+  // strings made every lowercase README look permanently stale.
+  const readmeIndex = commits.findIndex((c) => c.files.some((f) => path.posix.basename(f.replace(/\\/g, '/')).toLowerCase() === readmeName));
+  const isManifest = (f: string): boolean => manifestPaths.has(f.toLowerCase()) || /(^|\/)(package\.json|pyproject\.toml|setup\.py|setup\.cfg|Cargo\.toml|go\.mod|Gemfile|.*\.gemspec)$/i.test(f);
+  // A version bump or dependency refresh changes the manifest without making
+  // the README wrong; only substantive manifest edits imply staleness.
+  const releaseOnly = /^(?:v?\d+\.\d+\.\d+(?:[-+].*)?|release(?:d)?\b.*|publish(?:ed)?\b.*|bump\b.*|chore(?:\([^)]*\))?!?:\s*(?:release|publish|bump|update (?:deps|dependencies)|upgrade).*)$/i;
+  const manifestIndex = commits.findIndex((c) => c.files.some(isManifest) && !releaseOnly.test(c.subject.trim()));
 
   if (manifestIndex < 0) return { score: max, max, issues: [] };
+  // A shallow clone cannot see whether the README changed before the cut-off.
+  if (readmeIndex < 0 && facts.project.repository?.shallow) return { score: max, max, issues: [] };
   if (readmeIndex >= 0) {
     if (manifestIndex > readmeIndex) {
       return { score: max, max, issues: [] };
@@ -315,8 +325,8 @@ export function computeFreshness(facts: FactSheet, analysis: ReadmeAnalysis, roo
   // An untracked or uncommitted README can legitimately be newer than the last
   // manifest commit; checkout timestamps are not evidence, working-tree status is.
   try {
-    if (isFileDirty(root, README_FILE)) {
-      const mtime = statSync(path.join(root, README_FILE)).mtimeMs;
+    if (isFileDirty(root, readmePath)) {
+      const mtime = statSync(path.join(root, readmePath)).mtimeMs;
       const commitTime = Date.parse(commits[manifestIndex]!.date);
       if (Number.isFinite(commitTime) && mtime > commitTime) return { score: max, max, issues: [] };
     }
@@ -328,7 +338,7 @@ export function computeFreshness(facts: FactSheet, analysis: ReadmeAnalysis, roo
     max,
     issues: [{
       code: 'readme_stale',
-      message: `Manifest changed in ${commits[manifestIndex]!.hash.slice(0, 7)} ("${commits[manifestIndex]!.subject}") but README.md was not updated in the last ${commits.length} commits.`,
+      message: `Manifest changed in ${commits[manifestIndex]!.hash.slice(0, 7)} ("${commits[manifestIndex]!.subject}") but ${readmePath} was not updated in the last ${commits.length} commits.`,
     }],
   };
 }

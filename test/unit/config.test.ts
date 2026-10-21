@@ -9,6 +9,7 @@ import {
   defaultWeights,
   initConfig,
   loadConfig,
+  normalizeWeights,
 } from '../../src/config.js';
 
 test('default weights always sum to 100 and follow the preset', () => {
@@ -20,6 +21,24 @@ test('default weights always sum to 100 and follow the preset', () => {
   assert.equal(defaultWeights('web').completeness, 30);
   assert.equal(defaultWeights('web').usability, 30);
   assert.equal(defaultWeights('dataset').completeness, 40);
+});
+
+test('normalizeWeights accepts relative values and always returns integers summing to 100', () => {
+  assert.deepEqual(
+    normalizeWeights({ completeness: 2, usability: 1, accuracy: 1, readability: 1, freshness: 1 }),
+    { completeness: 33, usability: 17, accuracy: 17, readability: 17, freshness: 16 },
+  );
+  assert.deepEqual(
+    normalizeWeights({ completeness: 1, usability: 1, accuracy: 1, readability: 1, freshness: 1 }),
+    { completeness: 20, usability: 20, accuracy: 20, readability: 20, freshness: 20 },
+  );
+  assert.deepEqual(
+    normalizeWeights({ completeness: 35, usability: 25, accuracy: 20, readability: 10, freshness: 10 }),
+    { completeness: 35, usability: 25, accuracy: 20, readability: 10, freshness: 10 },
+  );
+  const fractional = normalizeWeights({ completeness: 1.5, usability: 1.5, accuracy: 1, readability: 1, freshness: 1 });
+  assert.equal(Object.values(fractional ?? {}).reduce((sum, value) => sum + value, 0), 100);
+  assert.equal(normalizeWeights({ completeness: 0, usability: 0, accuracy: 0, readability: 0, freshness: 0 }), null);
 });
 
 test('defaultConfig is explicit and reproducible', () => {
@@ -81,7 +100,79 @@ test('loadConfig reads scalar settings, AI options and explicit weights', () => 
   }
 });
 
-test('loadConfig rejects invalid values with warnings and keeps defaults', () => {
+test('loadConfig normalizes relative weights instead of discarding the block', () => {
+  const { root, cleanup } = tempDir();
+  try {
+    writeFileSync(path.join(root, '.readme-smith.yaml'), [
+      'preset: cli',
+      'weights:',
+      '  completeness: 3',
+      '  usability: 2',
+      '  accuracy: 2',
+      '  readability: 1',
+      '  freshness: 1',
+    ].join('\n'));
+    const loaded = loadConfig(root);
+    assert.deepEqual(loaded.warnings, []);
+    assert.equal(loaded.weightsExplicit, true);
+    assert.deepEqual(loaded.config.weights, {
+      completeness: 34,
+      usability: 22,
+      accuracy: 22,
+      readability: 11,
+      freshness: 11,
+    });
+    assert.equal(Object.values(loaded.config.weights).reduce((sum, value) => sum + value, 0), 100);
+  } finally {
+    cleanup();
+  }
+});
+
+test('loadConfig lets partial weights inherit preset defaults before normalization', () => {
+  const { root, cleanup } = tempDir();
+  try {
+    writeFileSync(path.join(root, '.readme-smith.yaml'), [
+      'preset: cli',
+      'weights:',
+      '  completeness: 50',
+    ].join('\n'));
+    const loaded = loadConfig(root);
+    assert.deepEqual(loaded.warnings, []);
+    assert.equal(loaded.weightsExplicit, true);
+    assert.deepEqual(loaded.config.weights, {
+      completeness: 43,
+      usability: 22,
+      accuracy: 17,
+      readability: 9,
+      freshness: 9,
+    });
+  } finally {
+    cleanup();
+  }
+});
+
+test('loadConfig falls back when every explicit weight is zero', () => {
+  const { root, cleanup } = tempDir();
+  try {
+    writeFileSync(path.join(root, '.readme-smith.yaml'), [
+      'preset: web',
+      'weights:',
+      '  completeness: 0',
+      '  usability: 0',
+      '  accuracy: 0',
+      '  readability: 0',
+      '  freshness: 0',
+    ].join('\n'));
+    const loaded = loadConfig(root);
+    assert.equal(loaded.weightsExplicit, false);
+    assert.deepEqual(loaded.config.weights, defaultWeights('web'));
+    assert.ok(loaded.warnings.some((w) => /at least one positive/.test(w)));
+  } finally {
+    cleanup();
+  }
+});
+
+test('loadConfig rejects invalid values with warnings and keeps scalar defaults', () => {
   const { root, cleanup } = tempDir();
   try {
     writeFileSync(path.join(root, '.readme-smith.yml'), [
@@ -91,7 +182,7 @@ test('loadConfig rejects invalid values with warnings and keeps defaults', () =>
       'ai:',
       '  backend: cloud',
       'weights:',
-      '  completeness: 90',
+      '  completeness: -1',
       '  usability: 90',
     ].join('\n'));
     const loaded = loadConfig(root);
@@ -99,13 +190,32 @@ test('loadConfig rejects invalid values with warnings and keeps defaults', () =>
     assert.equal(loaded.config.language, 'auto');
     assert.equal(loaded.config.minScore, 80);
     assert.equal(loaded.config.ai.backend, 'local');
-    assert.equal(loaded.weightsExplicit, false);
+    assert.equal(loaded.weightsExplicit, true);
+    assert.deepEqual(loaded.config.weights, { completeness: 21, usability: 55, accuracy: 12, readability: 6, freshness: 6 });
     assert.equal(loaded.warnings.length, 5);
     assert.ok(loaded.warnings.some((w) => /preset "website"/.test(w)));
     assert.ok(loaded.warnings.some((w) => /language must be/.test(w)));
     assert.ok(loaded.warnings.some((w) => /minScore/.test(w)));
     assert.ok(loaded.warnings.some((w) => /ai\.backend/.test(w)));
-    assert.ok(loaded.warnings.some((w) => /weights must sum to 100/.test(w)));
+    assert.ok(loaded.warnings.some((w) => /weight "completeness"/.test(w)));
+  } finally {
+    cleanup();
+  }
+});
+
+test('loadConfig ignores a weight block with no usable values', () => {
+  const { root, cleanup } = tempDir();
+  try {
+    writeFileSync(path.join(root, '.readme-smith.yaml'), [
+      'preset: cli',
+      'weights:',
+      '  completeness: -5',
+      '  usability: heavy',
+    ].join('\n'));
+    const loaded = loadConfig(root);
+    assert.equal(loaded.weightsExplicit, false);
+    assert.deepEqual(loaded.config.weights, defaultWeights('cli'));
+    assert.ok(loaded.warnings.some((w) => /no usable weights/.test(w)));
   } finally {
     cleanup();
   }
