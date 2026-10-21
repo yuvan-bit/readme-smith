@@ -97,9 +97,15 @@ common(
   program
     .command('check')
     .description('CI gate: doctor plus a deterministic draft diff. Honours #rf-skip.')
-    .argument('[path]', 'repository path', '.'),
+    .argument('[path]', 'repository path', '.')
+    .option('--changed', 'also check workspace packages whose manifest or README changed')
+    .option('--base <ref>', 'git revision for --changed (default HEAD^)'),
 ).action(async (pathArg: string, commandOptions: Record<string, unknown>) => {
-  process.exitCode = await runCheck(pathArg, optionsFor(program.opts(), commandOptions));
+  process.exitCode = await runCheck(pathArg, {
+    ...optionsFor(program.opts(), commandOptions),
+    ...(commandOptions.changed === true ? { changed: true } : {}),
+    ...(typeof commandOptions.base === 'string' ? { base: commandOptions.base } : {}),
+  });
 });
 
 common(

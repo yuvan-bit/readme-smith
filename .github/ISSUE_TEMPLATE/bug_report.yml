@@ -1,52 +1,52 @@
-name: Bug report
-description: Something produced the wrong fact, score, draft or exit code.
+name: 缺陷报告
+description: 某个事实、评分、草稿或退出码出现了错误。
 title: "bug: "
 labels: [bug]
 body:
   - type: markdown
     attributes:
       value: |
-        Please do not include credentials, proprietary source code or `.env` contents.
-        A minimal fixture or the relevant `rf scan --json` fact block is the most useful reproduction.
+        请不要包含凭据、专有源码或 `.env` 内容。
+        最小夹具或相关的 `rf scan --json` 事实块是最有用的复现材料。
   - type: input
     id: version
     attributes:
-      label: readme-smith version
-      description: Output of `rf --version`.
+      label: readme-smith 版本
+      description: "`rf --version` 的输出。"
     validations:
       required: true
   - type: input
     id: node
     attributes:
-      label: Node.js and OS
-      placeholder: Node 20.11 on Windows 11
+      label: Node.js 与操作系统
+      placeholder: Node 20.11 / Windows 11
     validations:
       required: true
   - type: textarea
     id: command
     attributes:
-      label: Command and output
-      description: Include the full command, exit code and stderr. Add `--verbose` if useful.
+      label: 命令与输出
+      description: 请附上完整命令、退出码和 stderr。必要时加上 `--verbose`。
       render: shell
     validations:
       required: true
   - type: textarea
     id: expected
     attributes:
-      label: Expected behaviour
+      label: 期望的行为
     validations:
       required: true
   - type: textarea
     id: reproduction
     attributes:
-      label: Minimal reproduction
-      description: Repository layout, manifest snippet or a link to a minimal fixture.
+      label: 最小复现
+      description: 仓库结构、清单片段，或最小夹具的链接。
   - type: checkboxes
     id: checks
     attributes:
-      label: Confirmations
+      label: 确认
       options:
-        - label: I removed secrets and private source code from this report.
+        - label: 我已从报告中移除密钥和私有源码。
           required: true
-        - label: I checked that this is not already reported.
+        - label: 我已确认该问题尚未被报告。
           required: true

@@ -22,9 +22,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 2
+          fetch-depth: 0
 
       - uses: ./
         with:
           mode: check
           min-score: "80"
+          changed-only: "true"
+          base: ${{ github.event.pull_request.base.sha }}

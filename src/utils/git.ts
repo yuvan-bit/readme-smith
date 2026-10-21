@@ -171,6 +171,27 @@ export function isFileDirty(root: string, file: string): boolean {
   return !!out && out.trim().length > 0;
 }
 
+/**
+ * Files changed between `base` and HEAD, plus staged, unstaged and untracked
+ * files. Returns null when the base revision cannot be resolved.
+ */
+export function changedFiles(root: string, base: string): string[] | null {
+  if (!git(root, ['rev-parse', '--verify', '--quiet', `${base}^{commit}`])) return null;
+  const collect = (args: string[]): string[] => {
+    const out = git(root, args);
+    if (!out) return [];
+    return out
+      .split('\n')
+      .map((line) => line.trim().replace(/\\/g, '/'))
+      .filter(Boolean);
+  };
+  return [...new Set([
+    ...collect(['diff', '--name-only', '--diff-filter=ACMR', `${base}...HEAD`]),
+    ...collect(['diff', '--name-only', '--diff-filter=ACMR', 'HEAD']),
+    ...collect(['ls-files', '--others', '--exclude-standard']),
+  ])].sort();
+}
+
 
 export function commitCount(root: string): number | undefined {
   const n = git(root, ['rev-list', '--count', 'HEAD']);

@@ -1,13 +1,5 @@
 # readme-smith
 
-A local-first README health doctor. It reads your repository, proves what it can, scores the README you already have, and writes a reviewable draft that never invents commands, arguments, environment variables or licences.
-
-No account, no upload, no silent rewrites. The deterministic pipeline works fully offline.
-
-[中文简介](#中文简介) · [Quick start](#quick-start) · [Commands](#commands) · [Scoring](#scoring) · [CI integration](#ci-integration)
-
-## 中文简介
-
 readme-smith 是一个本地优先的 README 健康检查工具。它只从仓库文件中提取可证明的事实，为现有 README 做五维评分，生成可审阅的 `README.draft.md`，并在 CI 中阻止 README 随代码腐化。
 
 - **默认离线。** 扫描、评分、草稿和检查都在本地完成，不需要账号，也不上传代码。
@@ -15,83 +7,84 @@ readme-smith 是一个本地优先的 README 健康检查工具。它只从仓�
 - **不编造事实。** 命令、参数、环境变量和许可证都来自仓库证据；无法证明的信息标记为 `[verify]`，而不是猜一个看起来合理的值。
 - **可接入 CI。** `rf check` 同时校验评分和草稿差异，让过期的 README 在合并前失败，而不是在数月后误导新贡献者。
 
-## Contents
+[快速开始](#快速开始) · [命令](#命令) · [评分](#评分) · [CI 集成](#ci-集成)
 
-- [中文简介](#中文简介)
-- [Why readme-smith](#why-readme-smith)
-- [What it checks](#what-it-checks)
-- [Supported projects](#supported-projects)
-- [Installation](#installation)
-- [Quick start](#quick-start)
-- [A real diagnosis](#a-real-diagnosis)
-- [Commands](#commands)
-- [Draft workflow](#draft-workflow)
-- [Scoring](#scoring)
-- [Configuration](#configuration)
-- [AI boundary](#ai-boundary)
-- [Custom templates](#custom-templates)
-- [CI integration](#ci-integration)
-- [JSON output](#json-output)
-- [Programmatic API](#programmatic-api)
-- [Safety and privacy](#safety-and-privacy)
-- [Troubleshooting](#troubleshooting)
-- [Project layout](#project-layout)
-- [Development](#development)
-- [Contributing](#contributing)
-- [License](#license)
+## 目录
 
-## Why readme-smith
+- [为什么选择 readme-smith](#为什么选择-readme-smith)
+- [检查内容](#检查内容)
+- [支持的项目](#支持的项目)
+- [安装](#安装)
+- [快速开始](#快速开始)
+- [真实诊断示例](#真实诊断示例)
+- [命令](#命令)
+- [草稿工作流](#草稿工作流)
+- [评分](#评分)
+- [配置](#配置)
+- [AI 边界](#ai-边界)
+- [自定义模板](#自定义模板)
+- [CI 集成](#ci-集成)
+- [JSON 输出](#json-输出)
+- [编程接口](#编程接口)
+- [安全与隐私](#安全与隐私)
+- [故障排查](#故障排查)
+- [项目结构](#项目结构)
+- [开发](#开发)
+- [贡献](#贡献)
+- [许可证](#许可证)
 
-READMEs rot quietly. A script is renamed, a flag disappears, an install command stops working, and the README keeps promising the old world. Reviewers rarely notice until a new contributor hits the broken step.
+## 为什么选择 readme-smith
 
-readme-smith treats the README as something to verify against the repository:
+README 会悄悄腐化。脚本被重命名、参数被删除、安装命令失效，而 README 仍在描述旧世界。评审者很少注意到，直到新贡献者卡在某个已经坏掉的步骤上。
 
-- **Facts first.** Names, versions, scripts, binaries, entry points, environment variables, config files, CI jobs, licences and dependency counts are extracted from files. Anything not proven is `null`, never guessed.
-- **Drafts, not edits.** `rf draft` writes `README.draft.md`. `README.md` is only changed by `rf apply`, after a preview and a backup.
-- **A CI gate for rot.** `rf check` combines the score with a deterministic draft diff, so a stale README fails the pull request instead of drifting for months.
+readme-smith 把 README 当作需要对照仓库验证的文档：
 
-The tool is deliberately narrow: it does not generate a website, rewrite your title style, audit security or translate committed READMEs.
+- **事实优先。** 名称、版本、脚本、二进制、入口、环境变量、配置文件、CI 任务、许可证和依赖数量都从文件中提取。无法证明的内容是 `null`，绝不猜测。
+- **只生成草稿，不直接改写。** `rf draft` 写入 `README.draft.md`。`README.md` 只会由 `rf apply` 在预览并备份之后修改。
+- **为腐化设置 CI 门禁。** `rf check` 把评分与确定性草稿差异结合起来，让过期的 README 在拉取请求中失败，而不是漂移数月。
 
-## What it checks
+这个工具刻意保持窄范围：它不生成网站、不改写你的标题风格、不做安全审计，也不翻译已提交的 README。
 
-| Layer | What is inspected |
+## 检查内容
+
+| 层次 | 检查对象 |
 | --- | --- |
-| Repository facts | Manifests, scripts and their real invocations, binaries, entry points, workspace packages, install/usage commands, environment variable names and their sources, config files, CI workflows, dataset shape, licence files, language distribution and git history. |
-| README structure | H1–H3 headings, standard sections, fenced code blocks and their languages, table of contents, command mentions, environment variable mentions, licence claims and demo material. |
-| Verdict | Five weighted dimensions, missing items with line numbers, and a deterministic comparison between the committed README and a draft built from current facts. |
+| 仓库事实 | 清单文件、脚本及其真实调用方式、二进制、入口、工作区包、安装/使用命令、环境变量名称及其来源、配置文件、CI 工作流、数据集结构、许可证文件、语言分布和 git 历史。 |
+| README 结构 | H1–H3 标题、标准章节、围栏代码块及其语言、目录、命令提及、环境变量提及、许可证声明和演示材料。 |
+| 结论 | 五个加权维度、带行号的缺失项、已提交 README 与基于当前事实构建的草稿之间的确定性比较，以及单仓库的受影响包报告。 |
 
-Every fact carries provenance where it matters: an environment variable remembers which files mention it, a script keeps its actual invocation, and a licence records the file it came from. Unknown values stay `null`; missing prose becomes `[verify]`.
+每个关键事实都带有出处：环境变量记得哪些文件提到它，脚本保留真实调用方式，许可证记录来源文件。未知值保持 `null`；缺失的文案变为 `[verify]`。
 
-## Supported projects
+## 支持的项目
 
-The scanner understands these manifest families:
+扫描器识别以下清单家族：
 
-| Ecosystem | Manifest evidence |
+| 生态 | 清单证据 |
 | --- | --- |
-| Node.js / TypeScript | `package.json`, including npm/pnpm/yarn/bun workspaces |
-| Python | `pyproject.toml`, `setup.py`, `setup.cfg` |
+| Node.js / TypeScript | `package.json`，包括 npm/pnpm/yarn/bun 工作区 |
+| Python | `pyproject.toml`、`setup.py`、`setup.cfg` |
 | Rust | `Cargo.toml` |
 | Go | `go.mod` |
-| Ruby | `Gemfile`, `*.gemspec` |
+| Ruby | `Gemfile`、`*.gemspec` |
 | PHP | `composer.json` |
 | Java | `pom.xml` |
-| .NET | `*.csproj`, `*.sln` |
+| .NET | `*.csproj`、`*.sln` |
 
-Project type is resolved in this order: monorepo markers, then the primary manifest, then language distribution. Use `--preset` to override detection.
+项目类型按以下顺序解析：单仓库标记，其次主清单，最后语言分布。可用 `--preset` 覆盖检测结果。
 
-| Preset | Best for | Default weights (completeness / usability / accuracy / readability / freshness) |
+| 预设 | 适用场景 | 默认权重（完整性 / 可用性 / 准确性 / 可读性 / 新鲜度） |
 | --- | --- | --- |
-| `cli` | Command-line tools and binaries | 35 / 25 / 20 / 10 / 10 |
-| `lib` | Libraries and packages | 35 / 25 / 20 / 10 / 10 |
-| `web` | Web apps and browser UIs | 30 / 30 / 20 / 10 / 10 |
-| `monorepo` | Workspaces with several packages | 35 / 25 / 20 / 10 / 10 |
-| `dataset` | Data and notebook repositories | 40 / 20 / 20 / 10 / 10 |
+| `cli` | 命令行工具和二进制 | 35 / 25 / 20 / 10 / 10 |
+| `lib` | 库和包 | 35 / 25 / 20 / 10 / 10 |
+| `web` | Web 应用和浏览器界面 | 30 / 30 / 20 / 10 / 10 |
+| `monorepo` | 包含多个包的工作区 | 35 / 25 / 20 / 10 / 10 |
+| `dataset` | 数据和 notebook 仓库 | 40 / 20 / 20 / 10 / 10 |
 
-`auto` uses the detected preset and falls back to the standard weights.
+`auto` 使用检测到的预设，并回退到标准权重。
 
-## Installation
+## 安装
 
-Requires Node.js 18.17 or newer. Git is optional, but enables freshness checks and repository links.
+需要 Node.js 18.17 或更新版本。Git 是可选的，但启用新鲜度检查和仓库链接。
 
 ```bash
 git clone https://gitee.com/yuwan41064/readme-smith.git
@@ -101,38 +94,38 @@ npm run build
 npm link
 ```
 
-`npm link` exposes both `rf` and `readme-smith` on your PATH. If you prefer not to link, run the CLI from the checkout:
+`npm link` 会把 `rf` 和 `readme-smith` 都暴露到 PATH。如果你不想 link，也可以直接从检出目录运行 CLI：
 
 ```bash
 node /path/to/readme-smith/dist/cli.js doctor /path/to/project
 ```
 
-You can also install the checkout globally:
+也可以把检出目录全局安装：
 
 ```bash
 npm install -g .
 ```
 
-## Quick start
+## 快速开始
 
 ```bash
-rf init                 # optional: write .readme-smith.yaml
-rf scan .               # deterministic facts as JSON
-rf doctor .             # five-dimension score and missing items
-rf draft . --ai off     # write README.draft.md, leave README.md alone
-rf diff . --show        # section-level diff plus a unified excerpt
-rf apply . --dry-run    # preview the write
-rf apply .              # update README.md, keep .README.bak.md
-rf check .              # CI gate: score plus draft differences
+rf init                 # 可选：写入 .readme-smith.yaml
+rf scan .               # 以 JSON 输出确定性事实
+rf doctor .             # 五维评分和缺失项
+rf draft . --ai off     # 写入 README.draft.md，不动 README.md
+rf diff . --show        # 章节级差异和统一摘录
+rf apply . --dry-run    # 预览写入结果
+rf apply .              # 更新 README.md，保留 .README.bak.md
+rf check .              # CI 门禁：评分加草稿差异
 ```
 
-`scan` always prints the fact sheet as JSON. `doctor` tells you what is missing. `draft` proposes a document. `diff` shows section-level changes. `apply` writes the draft and keeps a backup. `check` never writes a draft or changes the README.
+`scan` 始终以 JSON 打印事实表。`doctor` 告诉你缺什么。`draft` 提出一份文档。`diff` 展示章节级变化。`apply` 写入草稿并保留备份。`check` 从不写草稿，也不修改 README。
 
-If the project type is not recognised, the command exits with code `2` and names the manifests it looked for. You can force a template with `--preset cli|lib|web|monorepo|dataset`.
+如果项目类型无法识别，命令会以退出码 `2` 结束，并列出它查找过的清单文件。你可以用 `--preset cli|lib|web|monorepo|dataset` 强制指定模板。
 
-## A real diagnosis
+## 真实诊断示例
 
-Given a repository whose README mentions a script that does not exist, `rf doctor` reports the problem at the exact line:
+假设某个仓库的 README 提到了一个不存在的脚本，`rf doctor` 会精确报告问题所在行：
 
 ```output
 $ rf doctor .
@@ -153,7 +146,7 @@ README health: 46/100 (threshold 80) — FAIL
   Freshness       10/10
 ```
 
-The first draft merges only the missing sections, preserving your prose byte-for-byte:
+第一份草稿只合并缺失的章节，逐字节保留你现有的文案：
 
 ```console
 $ rf draft . --ai off
@@ -162,7 +155,7 @@ $ rf draft . --ai off
   - README.md was not modified. Review with `rf diff`, apply with `rf apply`.
 ```
 
-Merge mode deliberately does not rewrite existing commands. To replace stale prose with a fresh fact-backed document, ask for a full draft instead:
+合并模式刻意不改写已有命令。如果想用基于事实的全新文档替换过期文案，请请求完整草稿：
 
 ```bash
 rf draft . --force --ai off
@@ -171,76 +164,78 @@ rf apply .
 rf doctor .
 ```
 
-## Commands
+## 命令
 
-| Command | What it does | Exit codes |
+| 命令 | 作用 | 退出码 |
 | --- | --- | --- |
-| `rf scan [path]` | Extract the deterministic fact sheet and print JSON. | `0` success, `2` unrecognised project type |
-| `rf draft [path]` | Write `README.draft.md`; never touch `README.md`. | `0` success, `2` scan/type failure |
-| `rf diff [path]` | Compare `README.md` with the draft section by section. | `0` differences, `1` none, `2` error or missing draft |
-| `rf doctor [path]` | Score completeness, usability, accuracy, readability and freshness. | `0` pass, `1` below threshold, `2` execution error |
-| `rf check [path]` | Run doctor plus a deterministic draft diff for CI. | `0` pass, `1` fail, `2` error |
-| `rf apply [path]` | Copy the draft into `README.md`, creating a backup. | `0` success, `2` missing draft or write failure |
-| `rf init [path]` | Write a commented `.readme-smith.yaml`. | `0` success |
+| `rf scan [path]` | 提取确定性事实表并打印 JSON。 | `0` 成功，`2` 项目类型无法识别 |
+| `rf draft [path]` | 写入 `README.draft.md`；绝不修改 `README.md`。 | `0` 成功，`2` 扫描/类型失败 |
+| `rf diff [path]` | 逐章节比较 `README.md` 与草稿。 | `0` 有差异，`1` 无差异，`2` 错误或草稿缺失 |
+| `rf doctor [path]` | 评分完整性、可用性、准确性、可读性和新鲜度。 | `0` 通过，`1` 低于阈值，`2` 执行错误 |
+| `rf check [path]` | 为 CI 运行 doctor 加确定性草稿差异；`--changed` 额外检查受影响的工作区包。 | `0` 通过，`1` 失败，`2` 错误 |
+| `rf apply [path]` | 把草稿复制到 `README.md`，并创建备份。 | `0` 成功，`2` 草稿缺失或写入失败 |
+| `rf init [path]` | 写入带注释的 `.readme-smith.yaml`。 | `0` 成功 |
 
-Every command accepts a repository path (default: the current directory) and the global options below.
+所有命令都接受仓库路径（默认当前目录）以及下面的全局选项。
 
-| Option | Values | Meaning |
+| 选项 | 取值 | 含义 |
 | --- | --- | --- |
-| `--preset <name>` | `cli`, `lib`, `web`, `monorepo`, `dataset` | Force a preset instead of detecting one. |
-| `--ai <backend>` | `local`, `openai`, `off` | AI backend for `draft`. `check` always uses `off`. |
-| `--min-score <n>` | `0`–`100` | Threshold for `doctor` and `check`. |
-| `--json` | flag | Emit structured data on stdout, including structured errors. |
-| `--quiet` | flag | Print only the final score, conclusion or written path. |
-| `--verbose` | flag | Narrate fact extraction on stderr. |
+| `--preset <name>` | `cli`、`lib`、`web`、`monorepo`、`dataset` | 强制指定预设，而不是自动检测。 |
+| `--ai <backend>` | `local`、`openai`、`off` | `draft` 的 AI 后端。`check` 始终使用 `off`。 |
+| `--min-score <n>` | `0`–`100` | `doctor` 和 `check` 的阈值。 |
+| `--json` | 标志 | 在 stdout 输出结构化数据，包括结构化错误。 |
+| `--quiet` | 标志 | 只打印最终分数、结论或写入路径。 |
+| `--verbose` | 标志 | 在 stderr 叙述事实提取过程。 |
 
-Command-specific options:
+命令专属选项：
 
-| Command | Option | Meaning |
+| 命令 | 选项 | 含义 |
 | --- | --- | --- |
-| `draft` | `--lang auto\|en\|zh` | Draft language; `auto` follows the existing README. |
-| `draft` | `--force` | Generate a full draft and allow AI to rewrite existing prose. |
-| `diff` | `--show` | Print a unified line excerpt in addition to the section summary. |
-| `apply` | `--dry-run` | Print the pending change without writing anything. |
-| `init` | `--force` | Overwrite an existing configuration file. |
+| `draft` | `--lang auto\|en\|zh` | 草稿语言；`auto` 跟随现有 README。 |
+| `draft` | `--force` | 生成完整草稿，并允许 AI 改写现有文案。 |
+| `diff` | `--show` | 在章节摘要之外打印统一行摘录。 |
+| `apply` | `--dry-run` | 只打印待执行的修改，不写入任何内容。 |
+| `init` | `--force` | 覆盖现有配置文件。 |
+| `check` | `--changed` | 同时评估清单或包 README 发生变化的工作区包。根 README 始终会被检查。 |
+| `check` | `--base <ref>` | `--changed` 模式下用于比较的 git 修订。默认为 `HEAD^`。 |
 
-## Draft workflow
+## 草稿工作流
 
-`rf draft` has two modes:
+`rf draft` 有两种模式：
 
-- **Merge mode** (the default when a README exists and the language does not change): only missing sections are appended. Existing headings, prose and code are preserved byte-for-byte.
-- **Full draft** (new README, `--force`, or a language change): the preset or custom template renders a complete document from facts. AI rewrites are possible only in this mode.
+- **合并模式**（README 已存在且语言未变化时的默认模式）：只追加缺失的章节。现有标题、文案和代码逐字节保留。
+- **完整草稿**（新 README、`--force` 或语言变化）：预设或自定义模板基于事实渲染完整文档。只有此模式才可能使用 AI 文案，且仅限简介、最多四条功能要点，以及使用章节的引导句。
 
-Review and apply are separate steps:
+审阅和应用是两个独立步骤：
 
 ```bash
 rf draft .
-rf diff . --show       # exits 0 when differences exist, 1 when identical
-rf apply . --dry-run   # exits 0; writes nothing, creates no backup
-rf apply .             # backups to .README.bak.md, then replaces README.md
+rf diff . --show       # 有差异时退出 0，完全一致时退出 1
+rf apply . --dry-run   # 退出 0；不写入，也不创建备份
+rf apply .             # 备份到 .README.bak.md，然后替换 README.md
 ```
 
-`rf diff` exits `2` when the draft is missing or unreadable. `rf apply` refuses to run without a draft. Applying an identical draft is a no-op.
+草稿缺失或不可读时，`rf diff` 退出 `2`。没有草稿时，`rf apply` 拒绝运行。应用完全相同的草稿是空操作。
 
-## Scoring
+## 评分
 
-The score is a weighted sum of five dimensions. Each applicable check carries partial credit, and a failing check is capped below its full weight so rounding cannot hide a defect.
+分数是五个维度的加权和。每个适用的检查都带部分分，未通过的检查会被压到低于其全部权重，避免四舍五入掩盖缺陷。
 
-| Dimension | Default weight | What it checks |
+| 维度 | 默认权重 | 检查内容 |
 | --- | --- | --- |
-| Completeness | 35 | Title, introduction, install, usage, licence, contributing, demo and package sections required by the preset |
-| Usability | 25 | Install commands derived from the manifest, runnable usage examples, no command drift |
-| Accuracy | 20 | Scripts exist, environment variables exist, the stated licence matches the repository |
-| Readability | 10 | One H1, no heading-level jumps, labelled code fences, a table of contents for long documents |
-| Freshness | 10 | Manifest changes after the last README update, using git history and working-tree state |
+| 完整性 | 35 | 预设要求的标题、简介、安装、使用、许可证、贡献、演示和包章节 |
+| 可用性 | 25 | 从清单推导的安装命令、可运行的使用示例、无命令漂移 |
+| 准确性 | 20 | 脚本存在、环境变量存在、声明的许可证与仓库一致 |
+| 可读性 | 10 | 唯一 H1、标题层级不跳级、代码围栏带语言标记、长文档有目录 |
+| 新鲜度 | 10 | 最后一次 README 更新之后清单是否变化，依据 git 历史和工作区状态 |
 
-Presets adjust the weights as shown above. Set `minScore` in the config or pass `--min-score`. `doctor` and `check` exit `1` when the score is below it.
+预设会按上文调整权重。在配置中设置 `minScore` 或传入 `--min-score`。分数低于阈值时，`doctor` 和 `check` 退出 `1`。
 
-`check` is stricter than `doctor`: it fails when the project type is unknown, the README is missing, the score is below the threshold, **or** the committed README differs from the deterministic draft. That last rule is what catches prose that has drifted from current facts.
+`check` 比 `doctor` 更严格：项目类型未知、README 缺失、分数低于阈值，**或**已提交的 README 与确定性草稿不同，都会失败。最后一条规则正是用来抓住已经偏离当前事实的文案。
 
-## Configuration
+## 配置
 
-Run `rf init` to create `.readme-smith.yaml`, then edit only what you need. The file is optional; the defaults are the same values. Both `.readme-smith.yaml` and `.readme-smith.yml` are recognised.
+运行 `rf init` 创建 `.readme-smith.yaml`，然后只修改你需要的部分。该文件是可选的，默认值相同。`.readme-smith.yaml` 和 `.readme-smith.yml` 都会被识别。
 
 ```yaml
 version: 1
@@ -250,10 +245,10 @@ minScore: 80
 
 ai:
   backend: local      # local | openai | off
-  baseUrl: null       # OpenAI-compatible endpoint
-  model: null         # defaults to llama3.2 locally, gpt-4o-mini for openai
+  baseUrl: null       # OpenAI 兼容端点
+  model: null         # 本地默认 llama3.2，openai 默认 gpt-4o-mini
 
-weights:              # must sum to 100
+weights:              # 必须合计为 100
   completeness: 35
   usability: 25
   accuracy: 20
@@ -261,30 +256,32 @@ weights:              # must sum to 100
   freshness: 10
 ```
 
-| Environment variable | When it is used |
+| 环境变量 | 使用时机 |
 | --- | --- |
-| `OPENAI_API_KEY` | Only when you explicitly select `--ai openai`. It is never read for local or offline runs. |
+| `OPENAI_API_KEY` | 仅在你显式选择 `--ai openai` 时使用。本地或离线运行绝不会读取它。 |
 
-Configuration warnings are printed to stderr and never abort a run; invalid values fall back to the default. In particular, weights that do not sum to `100` are ignored as a set.
+配置警告会打印到 stderr，绝不中止运行；无效值回退到默认值。特别是，合计不为 `100` 的权重会作为整体被忽略。
 
-## AI boundary
+## AI 边界
 
-AI is optional and narrow. It rewrites the fact block into an introductory paragraph; it never sees your source files, and it cannot add commands, flags, environment variables, API names, badges, authorship, versions or licences. Temperature is fixed at `0.2`.
+AI 是可选的，且范围很窄。它把事实块改写成三段文案：一段简介、最多四条功能要点，以及使用章节的引导句。它永远看不到你的源文件，也不能添加命令、参数、环境变量、API 名称、徽章、作者、版本或许可证。温度固定为 `0.2`。
 
-| Backend | Behaviour |
+| 后端 | 行为 |
 | --- | --- |
-| `local` (default) | Talks to an OpenAI-compatible server at `http://127.0.0.1:11434/v1` (Ollama by default). If it is unavailable, the deterministic template is used with a warning. |
-| `openai` | Explicit cloud opt-in. Requires `OPENAI_API_KEY`. The fact block is the only project data sent. |
-| `off` | No network access. Everything is rendered from facts. `rf check` always uses this mode. |
+| `local`（默认） | 与 `http://127.0.0.1:11434/v1` 的 OpenAI 兼容服务器通信（默认 Ollama）。不可用时回退到确定性模板并给出警告。 |
+| `openai` | 显式选择云端。需要 `OPENAI_API_KEY`。事实块是唯一发送的项目数据。 |
+| `off` | 不访问网络。所有内容都由事实渲染。`rf check` 始终使用此模式。 |
 
-Every AI result is validated against the fact sheet. Undeclared scripts, unknown environment variables, unsupported flags, wrong licence claims, unknown URLs, authorship and version claims are rejected, and the deterministic draft is used instead. Missing facts become `[verify]` markers rather than plausible-sounding guesses.
+每个 AI 字段都会独立对照事实表验证。未声明的脚本、未知环境变量、不支持的参数、错误的许可证声明、未知 URL、作者和版本声明都会被拒绝。被拒绝的字段会被丢弃，其余字段保留，并由确定性模板文案填补该字段；如果三个字段全部失败，整个响应会被丢弃并给出警告。缺失的事实会变成 `[verify]` 标记，而不是听起来合理的猜测。
 
-## Custom templates
+AI 绝不会用于合并模式或 `rf check`；请求 AI 需要 `--force`（或新建/语言变化的 README）。
 
-Override a preset by adding a Markdown file under `.readme-smith/templates/`:
+## 自定义模板
 
-- `cli.md` applies to every CLI draft.
-- `cli.zh.md` wins over `cli.md` for Chinese drafts.
+在 `.readme-smith/templates/` 下添加 Markdown 文件即可覆盖预设：
+
+- `cli.md` 适用于所有 CLI 草稿。
+- 中文草稿中，`cli.zh.md` 优先于 `cli.md`。
 
 ```markdown
 # {{displayName}}
@@ -296,18 +293,18 @@ Override a preset by adding a Markdown file under `.readme-smith/templates/`:
 {{installBlock}}
 ```
 
-Available variables are fact-backed: `name`, `displayName`, `description`, `version`, `type`, `preset`, `primaryLanguage`, `license`, `licenseFile`, `repository`, `install`, `installConsumer`, `installDev`, `usage`, `binaries`, `entryPoints`, `packages`, `scripts`, `scriptsTable`, `env`, `envTable`, `data`, `testCommand`, `buildCommand`, `contributing`, `ci`, `stats` and `installBlock`. An unknown variable is replaced with `[verify]` and reported as a warning.
+可用变量都由事实支撑：`name`、`displayName`、`description`、`version`、`type`、`preset`、`primaryLanguage`、`license`、`licenseFile`、`repository`、`install`、`installConsumer`、`installDev`、`usage`、`binaries`、`entryPoints`、`packages`、`scripts`、`scriptsTable`、`env`、`envTable`、`data`、`testCommand`、`buildCommand`、`contributing`、`ci`、`stats` 和 `installBlock`。未知变量会替换为 `[verify]`，并作为警告报告。
 
-A custom template is used for new documents, for `--force`, or when `--lang` changes the language of an existing README. In normal merge mode the built-in preset fills only the missing sections, preserving your prose byte-for-byte.
+新文档、`--force`，或 `--lang` 改变现有 README 的语言时，会使用自定义模板。普通合并模式中，内置预设只填补缺失的章节，逐字节保留你的文案。
 
-## CI integration
+## CI 集成
 
-The repository ships `action.yml` with two modes:
+仓库附带 `action.yml`，支持两种模式：
 
-- `check` runs `rf check` and fails the job on a low score or a stale draft. The result is written to the GitHub step summary.
-- `proposal` writes `README.draft.md`, reports how many sections need work, and leaves `README.md` untouched. The bundled `README proposal` workflow then opens a reviewable pull request from the draft; merging is still a human decision.
+- `check` 运行 `rf check`，在分数过低或草稿过期时使任务失败。结果写入 GitHub 步骤摘要。
+- `proposal` 写入 `README.draft.md`，报告有多少章节需要处理，并保持 `README.md` 不变。随附的 `README proposal` 工作流随后从草稿创建可审阅的拉取请求；是否合并仍由人决定。
 
-Inside this repository, the bundled workflow uses the local action:
+在本仓库内，随附工作流使用本地 action：
 
 ```yaml
 name: README check
@@ -320,14 +317,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 2
+          fetch-depth: 0
       - uses: ./
         with:
           mode: check
           min-score: "80"
+          changed-only: "true"
+          base: ${{ github.event.pull_request.base.sha }}
 ```
 
-The action builds the CLI from the checked-out source, so no npm release is required. For other repositories, install the CLI in the job and run it directly; the CLI is CI-agnostic:
+使用 `changed-only: "true"` 时，根 README 仍会被检查，并且每个在 `base` 与 `HEAD` 之间清单或包 README 发生变化的工作区包，都会用根阈值和预设自动检测进行评估。action 通过 `affected-packages` 暴露被评估的包数量，`--json` 会在 `affected` 下报告每个包。对于拉取请求，请把 `base` 设为 PR 的 base SHA；否则默认使用 `HEAD^`。
+
+action 的输入是 `mode`、`path`、`min-score`、`lang`、`ai`、`changed-only` 和 `base`。只有 `check` 模式使用 `changed-only` 和 `base`。
+
+action 会从检出的源码构建 CLI，因此不需要 npm 发布。对于其他仓库，请在任务中安装 CLI 并直接运行；CLI 与 CI 平台无关：
 
 ```bash
 npm ci
@@ -335,7 +338,7 @@ npm run build
 node dist/cli.js check . --min-score 80
 ```
 
-For pre-commit, install the CLI and add the hook:
+用于 pre-commit 时，安装 CLI 并添加钩子：
 
 ```yaml
 repos:
@@ -346,13 +349,13 @@ repos:
         args: ["--min-score", "80"]
 ```
 
-Set `fetch-depth: 2` (or more) when the CI checkout is shallow; freshness uses recent commit history.
+CI 检出较浅时，请设置 `fetch-depth: 2`（或更大）；新鲜度依赖最近的提交历史。`changed-only` 还需要比较基准存在于历史中，因此请使用 `fetch-depth: 0` 或显式获取基准引用。
 
-`check` honours a `#rf-skip` marker in the head commit message: findings are still reported, but the gate passes so a human can review the exception. Use it sparingly.
+`check` 会识别 head 提交信息中的 `#rf-skip` 标记：问题仍会报告，但门禁会通过，以便人工审阅例外。请谨慎使用。
 
-## JSON output
+## JSON 输出
 
-`--json` makes every command machine-readable and keeps human narration on stderr. Errors use the same envelope, so a script can parse failures too:
+`--json` 让所有命令都可被机器读取，并把人类可读的叙述保留在 stderr。错误使用相同的信封，因此脚本也能解析失败：
 
 ```json
 {
@@ -364,11 +367,13 @@ Set `fetch-depth: 2` (or more) when the CI checkout is shallow; freshness uses r
 }
 ```
 
-Reports contain relative paths, not absolute ones, and never include environment variable values. `scan --json --quiet` is suitable for piping into `jq` or another tool.
+报告包含相对路径而非绝对路径，并且绝不包含环境变量的值。`scan --json --quiet` 适合通过管道传给 `jq` 或其他工具。
 
-## Programmatic API
+使用 `check --changed` 时，报告还包含 `base` 和 `affected` 数组。每个条目有 `path`、`score`、`threshold`、`passed`、`skipped`、`reasons` 和 `missing`；包检查的原因会加上 `[packages/name]` 前缀。
 
-The ESM entry point exports the deterministic pipeline:
+## 编程接口
+
+ESM 入口导出确定性流水线：
 
 ```js
 import { scanFacts, scoreReadme, buildDraft, computeDiff } from 'readme-smith';
@@ -384,57 +389,60 @@ const draft = await buildDraft({
 console.log(draft.markdown);
 ```
 
-The main exports include `scanFacts`, `detectProjectType`, `analyseReadme`, `analyseCodeCommands`, `scoreReadme`, `computeFreshness`, `buildDraft`, `mergeDraft`, `validateProse`, `computeDiff`, `defaultWeights` and the configuration helpers.
+主要导出包括 `scanFacts`、`detectProjectType`、`analyseReadme`、`analyseCodeCommands`、`scoreReadme`、`computeFreshness`、`buildDraft`、`mergeDraft`、`requestCopy`、`validateProse`、`computeDiff`、`defaultWeights` 以及配置辅助函数。
 
-## Safety and privacy
+## 安全与隐私
 
-- **No telemetry.** readme-smith has no account system, analytics or upload step.
-- **No source upload.** AI, when explicitly enabled, receives only the fact block. `--ai off` never opens a network connection.
-- **No secret values.** The scanner records environment variable names and their source files, never their values.
-- **No silent writes.** `scan`, `doctor`, `diff` and `check` are read-only. `draft` writes only `README.draft.md`. `apply` is explicit and keeps `.README.bak.md`.
-- **Deterministic.** The same repository state produces the same facts, score and draft, minus git freshness.
+- **无遥测。** readme-smith 没有账号系统、分析或上传步骤。
+- **不上传源码。** 显式启用 AI 时，它只接收事实块。`--ai off` 绝不打开网络连接。
+- **不记录密钥值。** 扫描器只记录环境变量名称及其来源文件，绝不记录值。
+- **无静默写入。** `scan`、`doctor`、`diff` 和 `check` 都是只读的。`draft` 只写 `README.draft.md`。`apply` 是显式操作，并保留 `.README.bak.md`。
+- **确定性。** 除 git 新鲜度外，相同的仓库状态产生相同的事实、分数和草稿。
 
-## Troubleshooting
+## 故障排查
 
-| Symptom | Cause and fix |
+| 症状 | 原因与修复 |
 | --- | --- |
-| Exit code `2`, “project type is unknown” | Add a supported manifest, or force one with `--preset`. |
-| `doctor` passes but `check` fails | `check` also requires the README to match the deterministic draft. Run `rf draft`, review `rf diff`, then `rf apply`; use `#rf-skip` only for a deliberate exception. |
-| A draft adds sections but leaves a wrong command in place | Merge mode preserves existing prose. Edit it yourself, or generate a full draft with `rf draft . --force`. |
-| AI warning about an unavailable backend | Start a local OpenAI-compatible server, configure `ai.baseUrl`, or use `--ai off` for deterministic output. |
-| Freshness looks wrong on CI | Shallow clones hide history. Set `fetch-depth: 2` or deeper. |
-| Config warning about weights | All five weights must sum to `100`; otherwise the whole weight block falls back to defaults. |
-| `diff` exits `1` | There are no differences between the README and the draft. This is the “already in sync” case. |
+| 退出码 `2`，提示 “project type is unknown” | 添加受支持的清单文件，或用 `--preset` 强制指定。 |
+| `doctor` 通过但 `check` 失败 | `check` 还要求 README 与确定性草稿一致。运行 `rf draft`，审阅 `rf diff`，然后 `rf apply`；仅在有意例外时使用 `#rf-skip`。 |
+| 草稿添加了章节，但错误的命令仍在 | 合并模式保留现有文案。请自行修改，或用 `rf draft . --force` 生成完整草稿。 |
+| AI 警告后端不可用 | 启动本地 OpenAI 兼容服务器、配置 `ai.baseUrl`，或使用 `--ai off` 获得确定性输出。 |
+| CI 上新鲜度看起来不对 | 浅克隆隐藏历史。设置 `fetch-depth: 2` 或更深。 |
+| `check --changed` 以 `git_base_not_found` 退出 `2` | 比较修订在检出中不存在。请获取 PR 基准（或传入有效的 `--base`）。 |
+| 配置警告权重问题 | 五个权重必须合计为 `100`；否则整个权重块回退到默认值。 |
+| `diff` 退出 `1` | README 与草稿之间没有差异。这是“已经同步”的情况。 |
 
-## Project layout
+## 项目结构
 
-- `src/facts/` — deterministic detectors for manifests, languages, scripts, binaries, environment variables, config files, CI workflows, build commands and licences.
-- `src/readme/` — README parser and the five-dimension scorer.
-- `src/draft/` — built-in templates, custom templates, merge-only-missing logic and the optional AI boundary.
-- `src/diff/` — section-level diff and unified excerpts.
-- `src/commands/` — one module per CLI command, including exit codes.
-- `test/fixtures/` and `test/golden/` — language fixtures and golden fact snapshots.
-- `src/tests/` — unit, golden and end-to-end tests.
+- `src/facts/` — 针对清单、语言、脚本、二进制、环境变量、配置文件、CI 工作流、构建命令和许可证的确定性检测器。
+- `src/readme/` — README 解析器和五维评分器。
+- `src/draft/` — 内置模板、自定义模板、仅合并缺失内容的逻辑，以及可选的 AI 边界。
+- `src/diff/` — 章节级差异和统一摘录。
+- `src/ci/` — 从变更文件到受影响工作区包的确定性映射。
+- `src/commands/` — 每个 CLI 命令一个模块，包括退出码。
+- `test/fixtures/` 和 `test/golden/` — 语言夹具和黄金事实快照。
+- `src/tests/` — 单元、黄金和端到端测试。
 
-## Development
+## 开发
 
-| Command | Purpose |
+| 命令 | 用途 |
 | --- | --- |
-| `npm install` | Install dependencies |
-| `npm run build` | Compile TypeScript to `dist/` |
-| `npm test` | Run the Node test suite |
-| `npm run typecheck` | Type-check without emitting |
-| `npm run dev` | Rebuild on change |
-| `npm run clean` | Remove `dist/` |
-| `npm run self:doctor` | Score this repository |
-| `npm run self:check` | Run the CI gate against this repository |
+| `npm install` | 安装依赖 |
+| `npm run build` | 把 TypeScript 编译到 `dist/` |
+| `npm test` | 运行 Node 测试套件 |
+| `npm run test:coverage` | 带行、分支和函数覆盖率门禁运行测试（Node.js 22+） |
+| `npm run typecheck` | 只做类型检查，不产出文件 |
+| `npm run dev` | 变更时重新构建 |
+| `npm run clean` | 删除 `dist/` |
+| `npm run self:doctor` | 为本仓库评分 |
+| `npm run self:check` | 对本仓库运行 CI 门禁 |
 
-The test suite covers nine fixtures (Node, Python, Rust, Go, Ruby, monorepo, web, dataset and an unrecognised project), golden fact sheets, scoring, merge idempotence, diff semantics, AI validation with a local stub, and every CLI exit code.
+测试套件覆盖九个夹具（Node、Python、Rust、Go、Ruby、单仓库、Web、数据集和一个无法识别的项目）、黄金事实表、评分、合并幂等性、差异语义、使用本地桩的 AI 校验、受影响包检测，以及每个 CLI 退出码。CI 强制要求至少 80% 行覆盖、70% 分支覆盖和 80% 函数覆盖。
 
-## Contributing
+## 贡献
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, the fact contract, and the steps for adding a language or ecosystem detector. Pull requests should keep the two dogfood commands green.
+开发环境搭建、事实契约以及添加语言或生态检测器的步骤，请参阅 [CONTRIBUTING.md](CONTRIBUTING.md)。拉取请求应保持两条 dogfood 命令为绿色。
 
-## License
+## 许可证
 
-MIT. See [LICENSE](LICENSE) for the full text.
+MIT。完整文本请参阅 [LICENSE](LICENSE)。

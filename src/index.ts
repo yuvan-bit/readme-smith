@@ -19,9 +19,9 @@ export type { ParsedReadme } from './readme/parse.js';
 export { scoreReadme, computeFreshness } from './readme/score.js';
 export type { ScoreInput } from './readme/score.js';
 
-export { buildDraft, buildFreshDraft, renderFreshDraft, mergeDraft, requestIntro, validateProse, resolveDraftLanguage } from './draft/index.js';
+export { buildDraft, buildFreshDraft, renderFreshDraft, mergeDraft, requestCopy, validateProse, resolveDraftLanguage } from './draft/index.js';
 export type { DraftOptions } from './draft/index.js';
-export type { AiSettings, ProseResult } from './draft/index.js';
+export type { AiCopyResult, AiSettings } from './draft/index.js';
 export { buildFreshDraft as createDraftContent, renderFreshDraft as renderDraft } from './draft/templates.js';
 export { findCustomTemplate, renderCustomTemplate, templateVariables } from './draft/custom.js';
 

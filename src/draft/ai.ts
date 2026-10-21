@@ -6,10 +6,18 @@ export interface AiSettings {
   model: string | null;
 }
 
-export interface ProseResult {
-  text: string | null;
+export interface AiCopyResult {
+  intro: string | null;
+  features: string[];
+  usageNote: string | null;
   provider: string | null;
   warnings: string[];
+}
+
+export interface CopyPayload {
+  intro: string | null;
+  features: string[];
+  usageNote: string | null;
 }
 
 const LOCAL_DEFAULT_URL = 'http://127.0.0.1:11434/v1';
@@ -121,19 +129,19 @@ interface ChatResponse {
   error?: { message?: string };
 }
 
+function emptyCopy(warnings: string[] = []): AiCopyResult {
+  return { intro: null, features: [], usageNote: null, provider: null, warnings };
+}
+
 /**
- * Ask an OpenAI-compatible endpoint to rewrite facts into introduction prose.
- * Sends only the fact block — never repository files. Any failure returns null
- * so the caller can fall back to a deterministic template.
+ * Ask an OpenAI-compatible endpoint for the optional README copy fields.
+ * Sends only the fact block — never repository files. Each field is validated
+ * independently; rejected fields fall back to the deterministic template.
  */
-export async function requestIntro(facts: FactSheet, lang: Lang, ai: AiSettings): Promise<ProseResult> {
-  if (ai.backend === 'off') return { text: null, provider: null, warnings: [] };
+export async function requestCopy(facts: FactSheet, lang: Lang, ai: AiSettings): Promise<AiCopyResult> {
+  if (ai.backend === 'off') return emptyCopy();
   if (!facts.project.description) {
-    return {
-      text: null,
-      provider: null,
-      warnings: ['AI skipped: the manifest has no description, and the project purpose must not be inferred.'],
-    };
+    return emptyCopy(['AI skipped: the manifest has no description, and the project purpose must not be inferred.']);
   }
 
   const endpoint = ai.backend === 'local'
@@ -146,11 +154,7 @@ export async function requestIntro(facts: FactSheet, lang: Lang, ai: AiSettings)
   if (ai.backend === 'openai') {
     const key = process.env.OPENAI_API_KEY;
     if (!key) {
-      return {
-        text: null,
-        provider: null,
-        warnings: ['AI backend "openai" requires OPENAI_API_KEY; used the deterministic template instead.'],
-      };
+      return emptyCopy(['AI backend "openai" requires OPENAI_API_KEY; used the deterministic template instead.']);
     }
     header.authorization = `Bearer ${key}`;
   }
@@ -163,6 +167,8 @@ export async function requestIntro(facts: FactSheet, lang: Lang, ai: AiSettings)
     language: facts.project.primaryLanguage,
     license: facts.project.license?.spdx ?? facts.project.license?.family ?? null,
     binaries: facts.binaries,
+    entryPoints: facts.entryPoints,
+    packages: facts.packages,
     scripts: facts.scripts.map((s) => ({ name: s.name, command: s.command, invocation: s.invocation })),
     install: {
       consumer: facts.install.consumer?.command ?? null,
@@ -174,13 +180,17 @@ export async function requestIntro(facts: FactSheet, lang: Lang, ai: AiSettings)
   };
 
   const prompt = [
-    'You rewrite repository facts into a short README introduction.',
+    'You write a small README copy block from repository facts.',
     'Rules:',
-    '- Use ONLY the facts in the JSON block. Do not infer purpose, features, audience or history.',
+    '- Use ONLY the facts in the JSON block. Do not infer purpose, features, audience, performance or history.',
     '- Never invent commands, flags, environment variables, API names, versions, licences, badges, authors or links.',
+    '- "intro": one to three short sentences.',
+    '- "features": two to four short single-line bullets, each supported by a fact (declared script, executable, entry point, environment variable, package metadata or licence). Return an empty array when the facts support none.',
+    '- "usageNote": one short sentence that introduces the exact usage command rendered below it. Do not repeat or alter the command.',
+    '- Do not use Markdown headings or nested bullets.',
     '- If something is unclear, include the marker [verify].',
-    `- Write in ${languageName}. One to three short sentences.`,
-    '- Answer with JSON only: {"intro": "..."}',
+    `- Write in ${languageName}.`,
+    '- Answer with JSON only: {"intro":"...","features":["..."],"usageNote":"..."}',
     '',
     'FACTS:',
     JSON.stringify(factBlock, null, 2),
@@ -205,59 +215,110 @@ export async function requestIntro(facts: FactSheet, lang: Lang, ai: AiSettings)
     });
   } catch (error) {
     const reason = error instanceof Error ? error.message : String(error);
-    return {
-      text: null,
-      provider: null,
-      warnings: [`AI backend "${ai.backend}" is unavailable (${reason}); used the deterministic template instead.`],
-    };
+    return emptyCopy([`AI backend "${ai.backend}" is unavailable (${reason}); used the deterministic template instead.`]);
   }
 
   if (!response.ok) {
-    return {
-      text: null,
-      provider: null,
-      warnings: [`AI backend "${ai.backend}" returned HTTP ${response.status}; used the deterministic template instead.`],
-    };
+    return emptyCopy([`AI backend "${ai.backend}" returned HTTP ${response.status}; used the deterministic template instead.`]);
   }
 
   let body: ChatResponse;
   try {
     body = await response.json() as ChatResponse;
   } catch {
-    return { text: null, provider: null, warnings: [`AI backend "${ai.backend}" returned invalid JSON; used the deterministic template instead.`] };
+    return emptyCopy([`AI backend "${ai.backend}" returned invalid JSON; used the deterministic template instead.`]);
   }
   if (body.error?.message) {
-    return { text: null, provider: null, warnings: [`AI backend error: ${body.error.message}`] };
+    return emptyCopy([`AI backend error: ${body.error.message}`]);
   }
   const content = body.choices?.[0]?.message?.content?.trim();
   if (!content) {
-    return { text: null, provider: null, warnings: [`AI backend "${ai.backend}" returned no text; used the deterministic template instead.`] };
+    return emptyCopy([`AI backend "${ai.backend}" returned no text; used the deterministic template instead.`]);
   }
 
-  const parsed = parseIntroPayload(content);
+  const parsed = parseCopyPayload(content);
   if (!parsed) {
-    return { text: null, provider: null, warnings: ['AI response was not the required JSON object; used the deterministic template instead.'] };
+    return emptyCopy(['AI response was not the required JSON object; used the deterministic template instead.']);
   }
-  const issues = validateProse(parsed, facts);
-  if (issues.length > 0) {
-    return {
-      text: null,
-      provider: null,
-      warnings: [
-        `AI prose was rejected by the fact validator (${issues.slice(0, 3).join(' ')}); used the deterministic template instead.`,
-      ],
-    };
+  const validated = validateCopyPayload(parsed, facts);
+  if (!validated.intro && validated.features.length === 0 && !validated.usageNote) {
+    const detail = validated.warnings.slice(0, 3).join(' ') || 'no usable fields were returned';
+    return emptyCopy([`AI copy was rejected by the fact validator (${detail}); used the deterministic template instead.`]);
   }
-  return { text: parsed, provider: `${ai.backend}:${model}`, warnings: [] };
+  return {
+    intro: validated.intro,
+    features: validated.features,
+    usageNote: validated.usageNote,
+    provider: `${ai.backend}:${model}`,
+    warnings: validated.warnings,
+  };
 }
 
-function parseIntroPayload(content: string): string | null {
+function parseCopyPayload(content: string): CopyPayload | null {
   const withoutFence = content.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
   try {
     const doc = JSON.parse(withoutFence) as Record<string, unknown>;
-    if (typeof doc.intro === 'string' && doc.intro.trim()) return doc.intro.trim();
+    const intro = typeof doc.intro === 'string' && doc.intro.trim() ? doc.intro.trim() : null;
+    const usageNote = typeof doc.usageNote === 'string' && doc.usageNote.trim() ? doc.usageNote.trim() : null;
+    const features = Array.isArray(doc.features)
+      ? doc.features.filter((value): value is string => typeof value === 'string').map((value) => value.trim()).filter(Boolean)
+      : [];
+    if (!intro && !usageNote && features.length === 0) return null;
+    return { intro, features, usageNote };
   } catch {
     /* fall through */
   }
   return null;
+}
+
+function singleLine(text: string): string {
+  return text.replace(/\s+/g, ' ').trim();
+}
+
+function lineIssues(text: string): string[] {
+  const issues: string[] = [];
+  if (text.length > 400) issues.push('is longer than 400 characters.');
+  if (/^(?:#{1,6}\s|[-*+]\s|>\s|\|)/.test(text)) issues.push('must not start with a Markdown block marker.');
+  return issues;
+}
+
+function validateCopyField(
+  label: string,
+  text: string,
+  facts: FactSheet,
+  warnings: string[],
+): string | null {
+  const issues = [...lineIssues(text), ...validateProse(text, facts)];
+  if (issues.length > 0) {
+    warnings.push(`AI ${label} was rejected by the fact validator (${issues.slice(0, 2).join(' ')}).`);
+    return null;
+  }
+  return text;
+}
+
+function validateCopyPayload(payload: CopyPayload, facts: FactSheet): {
+  intro: string | null;
+  features: string[];
+  usageNote: string | null;
+  warnings: string[];
+} {
+  const warnings: string[] = [];
+  const intro = payload.intro
+    ? validateCopyField('introduction', singleLine(payload.intro), facts, warnings)
+    : null;
+  const usageNote = payload.usageNote
+    ? validateCopyField('usage note', singleLine(payload.usageNote), facts, warnings)
+    : null;
+
+  if (payload.features.length > 4) {
+    warnings.push(`AI returned ${payload.features.length} features; only the first four were kept.`);
+  }
+  const features: string[] = [];
+  for (const raw of payload.features.slice(0, 4)) {
+    const feature = singleLine(raw);
+    const accepted = validateCopyField('feature', feature, facts, warnings);
+    if (accepted) features.push(accepted);
+  }
+
+  return { intro, features, usageNote, warnings };
 }

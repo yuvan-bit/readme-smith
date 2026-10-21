@@ -1,8 +1,8 @@
 blank_issues_enabled: false
 contact_links:
-  - name: Usage and command reference
-    url: https://gitee.com/yuwan41064/readme-smith#commands
-    about: Check the README before opening an issue.
-  - name: Security reports
+  - name: 用法与命令参考
+    url: https://gitee.com/yuwan41064/readme-smith#命令
+    about: 提交 issue 之前请先查阅 README。
+  - name: 安全报告
     url: https://gitee.com/yuwan41064/readme-smith/issues
-    about: Please report vulnerabilities privately to the maintainer instead of filing a public issue with secrets.
+    about: 请私下向维护者报告漏洞，不要在公开 issue 中附带密钥。

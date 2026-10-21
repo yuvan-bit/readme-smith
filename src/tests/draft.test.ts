@@ -5,7 +5,7 @@ import { createServer } from 'node:http';
 import path from 'node:path';
 import { fixture, tempFixture } from './helpers.js';
 import { scanFacts } from '../facts/index.js';
-import { buildDraft, resolveDraftLanguage, validateProse, requestIntro } from '../draft/index.js';
+import { buildDraft, resolveDraftLanguage, validateProse, requestCopy } from '../draft/index.js';
 import type { AiSettings } from '../draft/index.js';
 import type { FactSheet, LanguageSetting, PresetId } from '../types.js';
 
@@ -210,20 +210,22 @@ test('validateProse rejects invented commands, env vars, flags, licences and URL
   assert.deepEqual(validateProse('   ', facts), ['AI returned empty prose.']);
 });
 
-test('requestIntro is a no-op when AI is off', async () => {
+test('requestCopy is a no-op when AI is off', async () => {
   const facts = await factsFor('node-cli');
-  const result = await requestIntro(facts, 'en', AI_OFF);
-  assert.equal(result.text, null);
+  const result = await requestCopy(facts, 'en', AI_OFF);
+  assert.equal(result.intro, null);
+  assert.deepEqual(result.features, []);
+  assert.equal(result.usageNote, null);
   assert.deepEqual(result.warnings, []);
 });
 
-test('requestIntro requires an OpenAI key for the cloud backend', async () => {
+test('requestCopy requires an OpenAI key for the cloud backend', async () => {
   const facts = await factsFor('node-cli');
   const previous = process.env.OPENAI_API_KEY;
   delete process.env.OPENAI_API_KEY;
   try {
-    const result = await requestIntro(facts, 'en', { backend: 'openai', baseUrl: null, model: null });
-    assert.equal(result.text, null);
+    const result = await requestCopy(facts, 'en', { backend: 'openai', baseUrl: null, model: null });
+    assert.equal(result.intro, null);
     assert.ok(result.warnings.some((w) => /OPENAI_API_KEY/.test(w)));
   } finally {
     if (previous === undefined) delete process.env.OPENAI_API_KEY;
@@ -231,7 +233,7 @@ test('requestIntro requires an OpenAI key for the cloud backend', async () => {
   }
 });
 
-test('requestIntro sends only facts and accepts validated prose', async () => {
+test('requestCopy sends only facts and accepts validated copy', async () => {
   const facts = await factsFor('node-cli');
   let requestBody = '';
   const server = createServer((req, res) => {
@@ -241,7 +243,11 @@ test('requestIntro sends only facts and accepts validated prose', async () => {
       requestBody = body;
       res.writeHead(200, { 'content-type': 'application/json' });
       res.end(JSON.stringify({
-        choices: [{ message: { content: JSON.stringify({ intro: 'acme-tool formats widgets from the command line. It is licensed under MIT.' }) } }],
+        choices: [{ message: { content: JSON.stringify({
+          intro: 'acme-tool formats widgets from the command line. It is licensed under MIT.',
+          features: ['Builds with the declared `npm run build` script.', 'Reads `ACME_TOKEN` from the environment.'],
+          usageNote: 'Run the declared executable to see its options.',
+        }) } }],
       }));
     });
   });
@@ -249,12 +255,17 @@ test('requestIntro sends only facts and accepts validated prose', async () => {
   try {
     const address = server.address();
     assert.ok(address && typeof address === 'object');
-    const result = await requestIntro(facts, 'en', {
+    const result = await requestCopy(facts, 'en', {
       backend: 'local',
       baseUrl: `http://127.0.0.1:${address.port}/v1`,
       model: 'stub-model',
     });
-    assert.equal(result.text, 'acme-tool formats widgets from the command line. It is licensed under MIT.');
+    assert.equal(result.intro, 'acme-tool formats widgets from the command line. It is licensed under MIT.');
+    assert.deepEqual(result.features, [
+      'Builds with the declared `npm run build` script.',
+      'Reads `ACME_TOKEN` from the environment.',
+    ]);
+    assert.equal(result.usageNote, 'Run the declared executable to see its options.');
     assert.equal(result.provider, 'local:stub-model');
     assert.deepEqual(result.warnings, []);
 
@@ -267,6 +278,7 @@ test('requestIntro sends only facts and accepts validated prose', async () => {
     assert.equal(payload.temperature, 0.2);
     assert.match(payload.messages[1]!.content, /FACTS:/);
     assert.match(payload.messages[1]!.content, /"name": "acme-tool"/);
+    assert.match(payload.messages[1]!.content, /"features"/);
     assert.doesNotMatch(payload.messages[1]!.content, /process\.env/);
     assert.doesNotMatch(payload.messages[1]!.content, /import \{/);
   } finally {
@@ -274,7 +286,55 @@ test('requestIntro sends only facts and accepts validated prose', async () => {
   }
 });
 
-test('requestIntro falls back when the model invents facts', async () => {
+test('AI features and usage notes are rendered, invalid fields are dropped', async () => {
+  const { root, cleanup } = tempFixture('node-cli');
+  const server = createServer((req, res) => {
+    req.resume();
+    res.writeHead(200, { 'content-type': 'application/json' });
+    res.end(JSON.stringify({
+      choices: [{ message: { content: JSON.stringify({
+        intro: 'acme-tool formats widgets from the command line.',
+        features: [
+          'Builds with the declared `npm run build` script.',
+          'Run `npm run deploy` to publish.',
+          '## Heading injection',
+          'Reads `ACME_TOKEN` from the environment.',
+        ],
+        usageNote: 'Run `acme --help` to list the supported flags.',
+      }) } }],
+    }));
+  });
+  await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+  try {
+    const address = server.address();
+    assert.ok(address && typeof address === 'object');
+    const facts = scanFacts({ root, skipGit: true });
+    const draft = await buildDraft({
+      root,
+      facts,
+      preset: 'cli',
+      language: 'en',
+      ai: {
+        backend: 'local',
+        baseUrl: `http://127.0.0.1:${address.port}/v1`,
+        model: 'stub-model',
+      },
+      force: true,
+    });
+    assert.equal(draft.aiUsed, true);
+    assert.match(draft.markdown, /## Features\n\n- Builds with the declared `npm run build` script\./);
+    assert.match(draft.markdown, /- Reads `ACME_TOKEN` from the environment\./);
+    assert.doesNotMatch(draft.markdown, /npm run deploy/);
+    assert.doesNotMatch(draft.markdown, /Heading injection/);
+    assert.match(draft.markdown, /## Usage\n\nRun `acme --help` to list the supported flags\.\n\n```bash\nacme --help\n```/);
+    assert.ok(draft.warnings.some((w) => /AI feature was rejected/.test(w)));
+  } finally {
+    await new Promise<void>((resolve, reject) => server.close((error) => (error ? reject(error) : resolve())));
+    cleanup();
+  }
+});
+
+test('requestCopy falls back when the model invents facts', async () => {
   const facts = await factsFor('node-cli');
   const server = createServer((req, res) => {
     req.resume();
@@ -285,25 +345,26 @@ test('requestIntro falls back when the model invents facts', async () => {
   try {
     const address = server.address();
     assert.ok(address && typeof address === 'object');
-    const result = await requestIntro(facts, 'en', {
+    const result = await requestCopy(facts, 'en', {
       backend: 'local',
       baseUrl: `http://127.0.0.1:${address.port}/v1`,
       model: 'stub-model',
     });
-    assert.equal(result.text, null);
+    assert.equal(result.intro, null);
+    assert.deepEqual(result.features, []);
     assert.ok(result.warnings.some((w) => /validator/.test(w)));
   } finally {
     await new Promise<void>((resolve, reject) => server.close((error) => (error ? reject(error) : resolve())));
   }
 });
 
-test('requestIntro falls back when the backend is unreachable', async () => {
+test('requestCopy falls back when the backend is unreachable', async () => {
   const facts = await factsFor('node-cli');
-  const result = await requestIntro(facts, 'en', {
+  const result = await requestCopy(facts, 'en', {
     backend: 'local',
     baseUrl: 'http://127.0.0.1:1/v1',
     model: 'nope',
   });
-  assert.equal(result.text, null);
+  assert.equal(result.intro, null);
   assert.ok(result.warnings.some((w) => /unavailable/.test(w)));
 });

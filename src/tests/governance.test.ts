@@ -48,7 +48,10 @@ test('action.yml is a composite action with check and proposal modes', () => {
   assert.ok(action.inputs.mode);
   assert.ok(action.inputs['min-score']);
   assert.equal(action.inputs.ai?.default, 'off');
+  assert.equal(action.inputs['changed-only']?.default, 'false');
+  assert.ok('base' in action.inputs);
   assert.ok(action.outputs.score);
+  assert.ok(action.outputs['affected-packages']);
   assert.ok(action.outputs['draft-path']);
   const text = read('action.yml');
   assert.match(text, /check/);
@@ -85,7 +88,7 @@ test('README documents the required commands and never claims README edits by dr
   for (const command of ['rf scan', 'rf draft', 'rf diff', 'rf doctor', 'rf check', 'rf apply', 'rf init']) {
     assert.ok(text.includes(command), `README should document ${command}`);
   }
-  assert.match(text, /never touch `README\.md`/i);
+  assert.match(text, /绝不修改 `README\.md`/);
   assert.match(text, /#rf-skip/);
   assert.match(text, /\[CONTRIBUTING\.md\]\(CONTRIBUTING\.md\)/);
 });

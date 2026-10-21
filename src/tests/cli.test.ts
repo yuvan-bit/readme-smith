@@ -380,6 +380,63 @@ test('a #rf-skip commit message turns a failing check green', () => {
   }
 });
 
+test('check --changed evaluates workspace packages touched by the diff', () => {
+  const { root, cleanup } = tempFixture('monorepo');
+  try {
+    assert.equal(run(['draft', '.', '--ai', 'off'], root).status, 0);
+    assert.equal(run(['apply', '.'], root).status, 0);
+    assert.equal(run(['draft', 'packages/a', '--ai', 'off'], root).status, 0);
+    assert.equal(run(['apply', 'packages/a'], root).status, 0);
+
+    git(root, ['init', '-q']);
+    git(root, ['add', '-A']);
+    git(root, ['-c', 'user.name=RF Test', '-c', 'user.email=rf@example.invalid', 'commit', '-q', '-m', 'chore: baseline']);
+    writeFileSync(
+      path.join(root, 'packages/a/package.json'),
+      readFileSync(path.join(root, 'packages/a/package.json'), 'utf8').replace('1.0.0', '1.0.1'),
+    );
+    git(root, ['add', '-A']);
+    git(root, ['-c', 'user.name=RF Test', '-c', 'user.email=rf@example.invalid', 'commit', '-q', '-m', 'chore: bump widget-a']);
+
+    const result = run(['check', '.', '--changed', '--base', 'HEAD^', '--min-score', '0', '--json'], root);
+    assert.equal(result.status, 0, result.stdout + result.stderr);
+    const report = parseJson<{
+      passed: boolean;
+      base: string;
+      affected: Array<{ path: string; passed: boolean }>;
+    }>(result.stdout);
+    assert.equal(report.passed, true);
+    assert.equal(report.base, 'HEAD^');
+    assert.deepEqual(report.affected.map((target) => [target.path, target.passed]), [['packages/a', true]]);
+
+    writeFileSync(path.join(root, 'packages/a/README.md'), '# broken widget\n');
+    const broken = run(['check', '.', '--changed', '--base', 'HEAD^', '--min-score', '0', '--json'], root);
+    assert.equal(broken.status, 1);
+    const failed = parseJson<{ passed: boolean; reasons: string[]; affected: Array<{ path: string; passed: boolean }> }>(broken.stdout);
+    assert.equal(failed.passed, false);
+    assert.equal(failed.affected[0]?.passed, false);
+    assert.ok(failed.reasons.some((reason) => reason.startsWith('[packages/a] ')));
+  } finally {
+    cleanup();
+  }
+});
+
+test('check --changed reports an unusable git base', () => {
+  const { root, cleanup } = tempFixture('node-cli');
+  try {
+    git(root, ['init', '-q']);
+    git(root, ['add', '-A']);
+    git(root, ['-c', 'user.name=RF Test', '-c', 'user.email=rf@example.invalid', 'commit', '-q', '-m', 'chore: baseline']);
+
+    const result = run(['check', '.', '--changed', '--base', 'does-not-exist', '--json'], root);
+    assert.equal(result.status, 2);
+    const error = parseJson<{ error: { code: string } }>(result.stdout);
+    assert.equal(error.error.code, 'git_base_not_found');
+  } finally {
+    cleanup();
+  }
+});
+
 test('check writes a GitHub step summary when configured', () => {
   const { root, cleanup } = tempFixture('node-cli');
   const summaryDir = tempDir();

@@ -1,7 +1,7 @@
 {
   "name": "readme-smith",
   "version": "0.2.0",
-  "description": "Local-first README health doctor: deterministic facts, reviewable drafts and a CI gate against README rot.",
+  "description": "本地优先的 README 健康医生：确定性事实、可审阅草稿，以及阻止 README 腐化的 CI 门禁。",
   "keywords": [
     "readme",
     "documentation",
@@ -53,6 +53,7 @@
     "clean": "node -e \"fs.rmSync('dist',{recursive:true,force:true})\"",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "node --test \"dist/**/*.test.js\"",
+    "test:coverage": "node --test --experimental-test-coverage --test-coverage-include=\"dist/**/*.js\" --test-coverage-exclude=\"dist/tests/**\" --test-coverage-lines=80 --test-coverage-branches=70 --test-coverage-functions=80 \"dist/**/*.test.js\"",
     "prepublishOnly": "npm run clean && npm run build",
     "self:doctor": "node dist/cli.js doctor .",
     "self:check": "node dist/cli.js check ."

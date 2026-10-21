@@ -9,6 +9,8 @@ export interface DraftSection {
 export interface FreshDraft {
   title: string;
   intro: string;
+  features: string[];
+  usageNote: string | null;
   sections: DraftSection[];
 }
 
@@ -16,6 +18,7 @@ export interface Copy {
   contents: string;
   installation: string;
   usage: string;
+  features: string;
   configuration: string;
   scripts: string;
   packages: string;
@@ -47,6 +50,7 @@ const COPY: Record<Lang, Copy> = {
     contents: 'Contents',
     installation: 'Installation',
     usage: 'Usage',
+    features: 'Features',
     configuration: 'Configuration',
     scripts: 'Scripts',
     packages: 'Packages',
@@ -85,6 +89,7 @@ const COPY: Record<Lang, Copy> = {
     contents: '目录',
     installation: '安装',
     usage: '使用',
+    features: '功能',
     configuration: '配置',
     scripts: '脚本',
     packages: '项目结构',
@@ -148,7 +153,7 @@ export function buildFreshDraft(facts: FactSheet, preset: PresetId, lang: Lang):
   }
   if (facts.project.license) sections.push({ title: copy.license, body: licenseBody(facts, lang) });
 
-  return { title, intro, sections };
+  return { title, intro, features: [], usageNote: null, sections };
 }
 
 export function buildIntro(facts: FactSheet, lang: Lang): string {
@@ -254,14 +259,22 @@ export function codeBlock(lang: string, lines: string[]): string {
 /** Render a fresh document, including a table of contents once it is useful. */
 export function renderFreshDraft(draft: FreshDraft, lang: Lang): string {
   const copy = COPY[lang];
-  const needsToc = draft.sections.length > 5;
+  const sections = draft.sections.map((section) =>
+    section.title === copy.usage && draft.usageNote
+      ? { ...section, body: `${draft.usageNote}\n\n${section.body}` }
+      : section,
+  );
+  if (draft.features.length > 0) {
+    sections.unshift({ title: copy.features, body: draft.features.map((feature) => `- ${feature}`).join('\n') });
+  }
+  const needsToc = sections.length > 5;
   const parts: string[] = [`# ${draft.title}`, '', draft.intro];
 
   if (needsToc) {
-    const entries = draft.sections.map((s) => `- [${s.title}](#${slugify(s.title)})`);
+    const entries = sections.map((s) => `- [${s.title}](#${slugify(s.title)})`);
     parts.push('', `## ${copy.contents}`, '', ...entries);
   }
-  for (const section of draft.sections) {
+  for (const section of sections) {
     parts.push('', `## ${section.title}`, '', section.body);
   }
   return parts.join('\n').replace(/\n{3,}/g, '\n\n').trimEnd() + '\n';

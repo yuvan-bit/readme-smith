@@ -4,7 +4,7 @@ import { analyseReadme, parseReadme, readReadme } from '../readme/parse.js';
 import { buildFreshDraft, renderFreshDraft } from './templates.js';
 import { findCustomTemplate, renderCustomTemplate } from './custom.js';
 import { mergeDraft } from './merge.js';
-import { requestIntro, type AiSettings } from './ai.js';
+import { requestCopy, type AiSettings } from './ai.js';
 
 export interface DraftOptions {
   root: string;
@@ -81,13 +81,21 @@ export async function buildDraft(options: DraftOptions): Promise<DraftResult> {
     warnings.push(`--lang ${language} differs from the existing README language; generated a full draft in ${language}. README.md is unchanged.`);
   }
 
-  const prose = await requestIntro(facts, language, options.ai);
-  warnings.push(...prose.warnings);
-  if (prose.text) {
-    fresh.intro = prose.text;
+  const copy = await requestCopy(facts, language, options.ai);
+  warnings.push(...copy.warnings);
+  if (copy.intro) {
+    fresh.intro = copy.intro;
     aiUsed = true;
-    aiProvider = prose.provider;
   }
+  if (copy.features.length > 0) {
+    fresh.features = copy.features;
+    aiUsed = true;
+  }
+  if (copy.usageNote) {
+    fresh.usageNote = copy.usageNote;
+    aiUsed = true;
+  }
+  if (aiUsed) aiProvider = copy.provider;
   if (read.exists && options.force) {
     warnings.push('--force generated a fresh draft; README.md itself is untouched and remains the review baseline.');
   }
@@ -104,8 +112,8 @@ export async function buildDraft(options: DraftOptions): Promise<DraftResult> {
 
 export { buildFreshDraft, renderFreshDraft } from './templates.js';
 export { mergeDraft } from './merge.js';
-export { requestIntro, validateProse } from './ai.js';
-export type { AiSettings, ProseResult } from './ai.js';
+export { requestCopy, validateProse } from './ai.js';
+export type { AiCopyResult, AiSettings } from './ai.js';
 
 /** Absolute path of the draft file for a repository. */
 export function draftPath(root: string): string {

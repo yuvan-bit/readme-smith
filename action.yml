@@ -1,5 +1,5 @@
 name: readme-smith
-description: Local-first README health check and proposal action.
+description: 本地优先的 README 健康检查与草稿提议 action。
 author: yuwan41064
 branding:
   icon: book-open
@@ -7,38 +7,49 @@ branding:
 
 inputs:
   mode:
-    description: "check = fail the job when the README rots; proposal = write README.draft.md and report it."
+    description: "check = README 腐化时使任务失败；proposal = 写入 README.draft.md 并报告结果。"
     required: false
     default: check
   path:
-    description: Repository path to inspect.
+    description: 要检查的仓库路径。
     required: false
     default: .
   min-score:
-    description: Minimum score for check mode (0-100).
+    description: check 模式的最低分数（0-100）。
     required: false
     default: "80"
   lang:
-    description: Draft language for proposal mode (auto, en or zh).
+    description: proposal 模式的草稿语言（auto、en 或 zh）。
     required: false
     default: auto
   ai:
-    description: "AI backend for proposal mode (off, local or openai). Defaults to off so CI never needs a key."
+    description: "proposal 模式的 AI 后端（off、local 或 openai）。默认 off，因此 CI 不需要密钥。"
     required: false
     default: "off"
+  changed-only:
+    description: "同时检查清单或包 README 发生变化的工作区包。"
+    required: false
+    default: "false"
+  base:
+    description: changed-only 模式使用的 git 修订。默认为 HEAD^。
+    required: false
+    default: ""
 
 outputs:
   score:
-    description: README score produced by check mode.
+    description: check 模式产生的 README 分数。
     value: ${{ steps.check.outputs.score }}
   passed:
-    description: Whether check mode passed.
+    description: check 模式是否通过。
     value: ${{ steps.check.outputs.passed }}
+  affected-packages:
+    description: changed-only 模式检查的工作区包数量。
+    value: ${{ steps.check.outputs.affected }}
   draft-path:
-    description: Absolute path of README.draft.md produced by proposal mode.
+    description: proposal 模式产生的 README.draft.md 绝对路径。
     value: ${{ steps.proposal.outputs.draft-path }}
   has-changes:
-    description: Whether proposal mode found sections to add.
+    description: proposal 模式是否发现需要新增的章节。
     value: ${{ steps.proposal.outputs.has-changes }}
 
 runs:
@@ -74,10 +85,19 @@ runs:
       env:
         RF_PATH: ${{ inputs.path }}
         RF_MIN_SCORE: ${{ inputs.min-score }}
+        RF_CHANGED: ${{ inputs.changed-only }}
+        RF_BASE: ${{ inputs.base }}
         RF_JSON: ${{ runner.temp }}/readme-smith-check.json
       run: |
         status=0
-        node "$GITHUB_ACTION_PATH/dist/cli.js" check "$RF_PATH" --min-score "$RF_MIN_SCORE" --json > "$RF_JSON" || status=$?
+        args=()
+        if [ "$RF_CHANGED" = "true" ]; then
+          args+=(--changed)
+          if [ -n "$RF_BASE" ]; then
+            args+=(--base "$RF_BASE")
+          fi
+        fi
+        node "$GITHUB_ACTION_PATH/dist/cli.js" check "$RF_PATH" --min-score "$RF_MIN_SCORE" --json "${args[@]}" > "$RF_JSON" || status=$?
         node -e '
           const fs = require("fs");
           try {
@@ -85,6 +105,7 @@ runs:
             if (process.env.GITHUB_OUTPUT) {
               fs.appendFileSync(process.env.GITHUB_OUTPUT, `score=${report.score}\n`);
               fs.appendFileSync(process.env.GITHUB_OUTPUT, `passed=${report.passed}\n`);
+              fs.appendFileSync(process.env.GITHUB_OUTPUT, `affected=${Array.isArray(report.affected) ? report.affected.length : 0}\n`);
             }
           } catch {}
         '

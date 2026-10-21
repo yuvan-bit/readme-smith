@@ -1,30 +1,30 @@
-name: Documentation issue
-description: Report a wrong, missing or confusing explanation.
+name: 文档问题
+description: 报告错误、缺失或令人困惑的说明。
 title: "docs: "
 labels: [documentation]
 body:
   - type: input
     id: page
     attributes:
-      label: Page or section
-      placeholder: README.md → AI boundary
+      label: 页面或章节
+      placeholder: README.md → AI 边界
     validations:
       required: true
   - type: textarea
     id: problem
     attributes:
-      label: What is wrong?
-      description: Quote the sentence or command that misleads you.
+      label: 哪里不对？
+      description: 引用误导你的句子或命令。
     validations:
       required: true
   - type: textarea
     id: suggestion
     attributes:
-      label: Suggested correction
+      label: 建议的修正
   - type: checkboxes
     id: checks
     attributes:
-      label: Confirmation
+      label: 确认
       options:
-        - label: I checked the current README and CONTRIBUTING guide.
+        - label: 我已检查当前 README 和贡献指南。
           required: true

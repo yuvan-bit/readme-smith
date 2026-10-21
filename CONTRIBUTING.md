@@ -1,10 +1,10 @@
-# Contributing to readme-smith
+# 为 readme-smith 做贡献
 
-Thanks for helping make READMEs less wrong. This project is intentionally small and deterministic, so the most valuable contributions are evidence-backed detectors, tests and documentation — not new prose generators.
+感谢你帮助 README 少一些错误。这个项目刻意保持小而确定，因此最有价值的贡献是有证据支撑的检测器、测试和文档，而不是新的文案生成器。
 
-## Development setup
+## 开发环境
 
-Requires Node.js 18.17 or newer.
+需要 Node.js 18.17 或更新版本。
 
 ```bash
 npm install
@@ -12,49 +12,49 @@ npm run build
 npm test
 ```
 
-During development:
+开发期间：
 
 ```bash
 npm run dev          # tsc --watch
-npm run typecheck    # no emit
+npm run typecheck    # 不产出文件
 node dist/cli.js scan test/fixtures/node-cli
 ```
 
-The suite uses the Node test runner and golden files. It has no network dependency; the AI tests start a local stub server.
+测试套件使用 Node 测试运行器和黄金文件。它没有网络依赖；AI 测试会启动本地桩服务器。
 
-## Non-negotiable rules
+## 不可谈判的规则
 
-1. **Facts are never invented.** If the repository does not prove a value, the fact is `null` and the draft uses `[verify]`. Do not add fallbacks that guess a description, command, argument, environment variable, licence or author.
-2. **README.md is never modified implicitly.** `draft`, `diff`, `doctor` and `check` only read it. Only `apply` writes, and it creates `.README.bak.md` first.
-3. **AI only rewrites facts.** Prompts contain the fact block, never source files. Anything the validator rejects falls back to the deterministic template.
-4. **No secrets in commits.** Do not add tokens, keys, `.env` files or screenshots containing credentials.
+1. **事实绝不编造。** 如果仓库无法证明某个值，该事实就是 `null`，草稿使用 `[verify]`。不要添加猜测描述、命令、参数、环境变量、许可证或作者的兜底逻辑。
+2. **绝不隐式修改 README.md。** `draft`、`diff`、`doctor` 和 `check` 只读取它。只有 `apply` 写入，并会先创建 `.README.bak.md`。
+3. **AI 只改写事实。** 提示词包含事实块，绝不包含源文件。校验器拒绝的内容都会回退到确定性模板。
+4. **提交中不得包含密钥。** 不要添加令牌、密钥、`.env` 文件或包含凭据的截图。
 
-## Architecture map
+## 架构地图
 
-| Path | Responsibility |
+| 路径 | 职责 |
 | --- | --- |
-| `src/facts/` | Walk the repository and build the fact sheet. Each detector is pure and file-system based. |
-| `src/readme/parse.ts` | Parse headings, fenced blocks, commands, environment variables and standard sections. |
-| `src/readme/score.ts` | Five weighted dimensions: completeness, usability, accuracy, readability, freshness. |
-| `src/draft/templates.ts` | Built-in en/zh presets rendered only from facts. |
-| `src/draft/merge.ts` | Preserve existing sections; append only what is missing. |
-| `src/draft/ai.ts` | Optional OpenAI-compatible prose rewrite plus the fact validator. |
-| `src/diff/structured.ts` | Section-level diff and unified excerpt. |
-| `src/commands/` | One module per CLI command; exit codes live here. |
-| `src/tests/` | Unit, golden and end-to-end tests. |
+| `src/facts/` | 遍历仓库并构建事实表。每个检测器都是纯函数且基于文件系统。 |
+| `src/readme/parse.ts` | 解析标题、围栏代码块、命令、环境变量和标准章节。 |
+| `src/readme/score.ts` | 五个加权维度：完整性、可用性、准确性、可读性、新鲜度。 |
+| `src/draft/templates.ts` | 仅由事实渲染的内置中英文预设。 |
+| `src/draft/merge.ts` | 保留现有章节；只追加缺失内容。 |
+| `src/draft/ai.ts` | 可选的 OpenAI 兼容文案改写，以及事实校验器。 |
+| `src/diff/structured.ts` | 章节级差异和统一摘录。 |
+| `src/commands/` | 每个 CLI 命令一个模块；退出码也在这里。 |
+| `src/tests/` | 单元、黄金和端到端测试。 |
 
-## Adding a language or ecosystem detector
+## 添加语言或生态检测器
 
-A language usually needs two touches: statistics and manifest metadata.
+添加一门语言通常需要两处改动：统计和清单元数据。
 
-1. **Language statistics** — add or extend an entry in `EXTENSION_MAP` (or `BASENAME_MAP` for extensionless files) in `src/facts/languages.ts`. Keep the colour and weight fields reasonable; the weight affects the primary-language percentage.
-2. **Manifest** — add a parser and a detection entry:
-   - `detectManifests()` and `pickEcosystem()` in `src/facts/manifests.ts` declare which files exist and which ecosystem wins.
-   - Implement `parseX()` returning the shared `ManifestResult`: name, display name, version, description, licence, dependencies, scripts, entry points, binaries, workspace packages and publication status.
-   - Only set `binNames` when the manifest itself declares an executable (or a real binary target exists, as with Cargo `src/main.rs` and Go `package main`).
-3. **Install and usage** — teach `installCommandFor()` in the same file the consumer and development install commands. Usage is derived automatically from a declared binary or the `dev`/`start` script; do not add prose.
-4. **Fixture** — add a realistic project under `test/fixtures/<name>/` with its manifest, a small source file, a licence and a README. It must not contain secrets or generated build output.
-5. **Tests** — add assertions to `src/tests/facts.test.ts` and include the fixture in `GOLDEN_CASES`. Regenerate golden facts intentionally:
+1. **语言统计** — 在 `src/facts/languages.ts` 的 `EXTENSION_MAP`（无扩展名文件用 `BASENAME_MAP`）中添加或扩展条目。颜色和权重字段要保持合理；权重会影响主语言百分比。
+2. **清单** — 添加解析器和检测条目：
+   - `src/facts/manifests.ts` 中的 `detectManifests()` 和 `pickEcosystem()` 声明哪些文件存在，以及哪个生态胜出。
+   - 实现 `parseX()`，返回共享的 `ManifestResult`：名称、显示名、版本、描述、许可证、依赖、脚本、入口、二进制、工作区包和发布状态。
+   - 仅当清单本身声明可执行文件（或存在真实二进制目标，如 Cargo 的 `src/main.rs` 和 Go 的 `package main`）时才设置 `binNames`。
+3. **安装与使用** — 在同一文件中教会 `installCommandFor()` 消费者和开发安装命令。使用方式会自动从声明的二进制或 `dev`/`start` 脚本推导；不要添加文案。
+4. **夹具** — 在 `test/fixtures/<name>/` 下添加一个真实项目，包含清单、小型源文件、许可证和 README。它不得包含密钥或生成的构建产物。
+5. **测试** — 在 `src/tests/facts.test.ts` 中添加断言，并把夹具加入 `GOLDEN_CASES`。有意重新生成黄金事实：
 
    ```bash
    npm run build
@@ -62,7 +62,7 @@ A language usually needs two touches: statistics and manifest metadata.
    git diff test/golden
    ```
 
-6. **Verify end to end**:
+6. **端到端验证**：
 
    ```bash
    node dist/cli.js scan test/fixtures/<name> --json
@@ -70,18 +70,18 @@ A language usually needs two touches: statistics and manifest metadata.
    node dist/cli.js draft test/fixtures/<name> --ai off
    ```
 
-If a detector cannot prove a fact, return `null` and add a warning. A missing fact is better than a confident lie.
+如果检测器无法证明某个事实，请返回 `null` 并添加警告。缺失的事实胜过自信的谎言。
 
-## Changing scoring or templates
+## 修改评分或模板
 
-- Every scoring rule needs a test. Weights must still sum to 100 per preset.
-- Templates must be factual and use the en/zh heading names that the analyser recognises (`Installation`/`安装`, `Usage`/`使用`, `Configuration`/`配置`, `License`/`许可证`).
-- A merge-mode draft must return the input byte-for-byte when no sections are missing. Idempotence is covered by tests; keep it that way.
-- If you change a built-in template, run the CLI against `test/fixtures/node-cli`, `monorepo` and `dataset` and inspect `rf diff --show`.
+- 每条评分规则都需要测试。每个预设的权重仍必须合计为 100。
+- 模板必须基于事实，并使用分析器识别的中英文标题（`Installation`/`安装`、`Usage`/`使用`、`Configuration`/`配置`、`License`/`许可证`）。
+- 没有缺失章节时，合并模式草稿必须逐字节返回输入。幂等性由测试覆盖；请保持这一点。
+- 如果修改内置模板，请对 `test/fixtures/node-cli`、`monorepo` 和 `dataset` 运行 CLI，并检查 `rf diff --show`。
 
-## Commits and pull requests
+## 提交和拉取请求
 
-Use [Conventional Commits](https://www.conventionalcommits.org/):
+使用 [Conventional Commits](https://www.conventionalcommits.org/)：
 
 ```text
 feat(facts): detect uv workspaces
@@ -90,7 +90,7 @@ docs: explain the AI privacy boundary
 test(diff): cover insertion line numbers
 ```
 
-Before opening a pull request:
+打开拉取请求之前：
 
 ```bash
 npm run typecheck
@@ -100,19 +100,19 @@ node dist/cli.js doctor . --min-score 85
 node dist/cli.js check . --min-score 85
 ```
 
-The last two commands are the project dogfooding itself. Include the output in the PR description when it changes. Keep pull requests focused; mixed refactors and behaviour changes are hard to review.
+最后两条命令是项目在自我 dogfood。输出发生变化时，请把结果包含在 PR 描述中。保持拉取请求聚焦；混合重构和行为变更很难审阅。
 
-## Reporting bugs
+## 报告缺陷
 
-Use the issue templates and include:
+使用 issue 模板，并包含：
 
-- the command you ran (with `--verbose` if relevant),
-- the exit code,
-- the relevant fact JSON from `rf scan --json` (redact paths if needed),
-- what you expected instead.
+- 你运行的命令（相关时加上 `--verbose`），
+- 退出码，
+- `rf scan --json` 中相关的事实 JSON（必要时遮盖路径），
+- 你期望的结果。
 
-Please do not paste proprietary source code or credentials. A minimal fixture is the best reproduction.
+请不要粘贴专有源码或凭据。最小夹具是最好的复现方式。
 
-## Licence
+## 许可证
 
-By contributing, you agree that your contribution is licensed under the MIT licence in [LICENSE](LICENSE).
+通过贡献，你同意你的贡献按 [LICENSE](LICENSE) 中的 MIT 许可证授权。

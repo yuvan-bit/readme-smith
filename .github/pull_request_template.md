@@ -1,22 +1,22 @@
-## Summary
+## 摘要
 
-<!-- What changes, and why? Link the issue if one exists. -->
+<!-- 改了什么，为什么改？如果有对应 issue，请附上链接。 -->
 
-## Checklist
+## 检查清单
 
-- [ ] `npm run typecheck` passes
-- [ ] `npm run build` passes
-- [ ] `npm test` passes
-- [ ] `node dist/cli.js doctor . --min-score 85` passes
-- [ ] `node dist/cli.js check . --min-score 85` passes
-- [ ] New facts are proven by the repository; nothing is inferred or guessed
-- [ ] No secrets, tokens, `.env` files or generated `dist/` output are included
-- [ ] Golden fixtures were regenerated intentionally (`UPDATE_GOLDEN=1`) if fact output changed
+- [ ] `npm run typecheck` 通过
+- [ ] `npm run build` 通过
+- [ ] `npm test` 通过
+- [ ] `node dist/cli.js doctor . --min-score 85` 通过
+- [ ] `node dist/cli.js check . --min-score 85` 通过
+- [ ] 新增事实都有仓库证据；没有推断或猜测
+- [ ] 未包含密钥、令牌、`.env` 文件或生成的 `dist/` 产物
+- [ ] 事实输出变化时，已有意重新生成黄金夹具（`UPDATE_GOLDEN=1`）
 
-## Test plan
+## 测试计划
 
-<!-- Commands you ran and what you observed. Include `rf diff --show` output when templates changed. -->
+<!-- 你运行了哪些命令、观察到了什么。模板变化时请附上 `rf diff --show` 输出。 -->
 
-## Screenshots
+## 截图
 
-<!-- Only if the change is visible in a terminal; avoid screenshots containing secrets. -->
+<!-- 仅当变化在终端中可见时提供；避免包含密钥的截图。 -->
