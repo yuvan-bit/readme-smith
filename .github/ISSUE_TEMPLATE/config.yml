@@ -4,5 +4,5 @@ contact_links:
     url: https://gitee.com/yuwan41064/readme-smith#命令
     about: 提交 issue 之前请先查阅 README。
   - name: 安全报告
-    url: https://gitee.com/yuwan41064/readme-smith/issues
-    about: 请私下向维护者报告漏洞，不要在公开 issue 中附带密钥。
+    url: mailto:yuwan41064@gmail.com
+    about: 请通过邮件私下向维护者报告漏洞，不要在公开 issue 中附带密钥或复现细节。

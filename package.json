@@ -1,7 +1,7 @@
 {
   "name": "readme-smith",
   "version": "0.2.0",
-  "description": "本地优先的 README 健康医生：确定性事实、可审阅草稿，以及阻止 README 腐化的 CI 门禁。",
+  "description": "Local-first README health doctor: deterministic facts, reviewable drafts and CI gates. 本地优先的 README 健康医生。",
   "keywords": [
     "readme",
     "documentation",
@@ -17,14 +17,18 @@
     "type": "git",
     "url": "https://gitee.com/yuwan41064/readme-smith.git"
   },
+  "homepage": "https://gitee.com/yuwan41064/readme-smith",
+  "bugs": {
+    "url": "https://gitee.com/yuwan41064/readme-smith/issues"
+  },
   "license": "MIT",
   "type": "module",
   "engines": {
     "node": ">=18.17"
   },
   "bin": {
-    "rf": "./dist/cli.js",
-    "readme-smith": "./dist/cli.js"
+    "readme-smith": "./dist/cli.js",
+    "rf": "./dist/cli.js"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -43,6 +47,8 @@
     "README.md",
     "CHANGELOG.md",
     "CONTRIBUTING.md",
+    "SECURITY.md",
+    "CODE_OF_CONDUCT.md",
     "LICENSE",
     "action.yml"
   ],

@@ -86,6 +86,8 @@ readme-smith 把 README 当作需要对照仓库验证的文档：
 
 需要 Node.js 18.17 或更新版本。Git 是可选的，但启用新鲜度检查和仓库链接。
 
+项目尚未发布到 npm registry，请从源码安装：
+
 ```bash
 git clone https://gitee.com/yuwan41064/readme-smith.git
 cd readme-smith
@@ -94,7 +96,7 @@ npm run build
 npm link
 ```
 
-`npm link` 会把 `rf` 和 `readme-smith` 都暴露到 PATH。如果你不想 link，也可以直接从检出目录运行 CLI：
+`npm link` 会把 `readme-smith`（推荐）和短别名 `rf` 都暴露到 PATH。npm 上已存在名为 `rf` 的其它包，如果发生命令冲突，请使用 `readme-smith`。如果你不想 link，也可以直接从检出目录运行 CLI：
 
 ```bash
 node /path/to/readme-smith/dist/cli.js doctor /path/to/project
@@ -119,7 +121,7 @@ rf apply .              # 更新 README.md，保留 .README.bak.md
 rf check .              # CI 门禁：评分加草稿差异
 ```
 
-`scan` 始终以 JSON 打印事实表。`doctor` 告诉你缺什么。`draft` 提出一份文档。`diff` 展示章节级变化。`apply` 写入草稿并保留备份。`check` 从不写草稿，也不修改 README。
+示例中的 `rf` 是 `readme-smith` 的短别名，二者完全等价。`scan` 始终以 JSON 打印事实表。`doctor` 告诉你缺什么。`draft` 提出一份文档。`diff` 展示章节级变化。`apply` 写入草稿并保留备份。`check` 从不写草稿，也不修改 README。
 
 如果项目类型无法识别，命令会以退出码 `2` 结束，并列出它查找过的清单文件。你可以用 `--preset cli|lib|web|monorepo|dataset` 强制指定模板。
 
@@ -181,7 +183,7 @@ rf doctor .
 | 选项 | 取值 | 含义 |
 | --- | --- | --- |
 | `--preset <name>` | `cli`、`lib`、`web`、`monorepo`、`dataset` | 强制指定预设，而不是自动检测。 |
-| `--ai <backend>` | `local`、`openai`、`off` | `draft` 的 AI 后端。`check` 始终使用 `off`。 |
+| `--ai <backend>` | `local`、`openai`、`off` | 仅对 `draft` 生效；其它命令接受该选项但会忽略，`check` 始终使用 `off`。 |
 | `--min-score <n>` | `0`–`100` | `doctor` 和 `check` 的阈值。 |
 | `--json` | 标志 | 在 stdout 输出结构化数据，包括结构化错误。 |
 | `--quiet` | 标志 | 只打印最终分数、结论或写入路径。 |
@@ -299,7 +301,9 @@ AI 绝不会用于合并模式或 `rf check`；请求 AI 需要 `--force`（或�
 
 ## CI 集成
 
-仓库附带 `action.yml`，支持两种模式：
+> 本节仅适用于 GitHub Actions。Gitee 不会执行 `.github/workflows/` 中的工作流，仓库也未附带 Gitee Go 配置；在 Gitee Go 或其它 CI 中，请直接运行 `npm ci && npm run build && node dist/cli.js check . --min-score 80`。
+
+仓库附带 GitHub composite action（`action.yml`），支持两种模式：
 
 - `check` 运行 `rf check`，在分数过低或草稿过期时使任务失败。结果写入 GitHub 步骤摘要。
 - `proposal` 写入 `README.draft.md`，报告有多少章节需要处理，并保持 `README.md` 不变。随附的 `README proposal` 工作流随后从草稿创建可审阅的拉取请求；是否合并仍由人决定。
@@ -328,7 +332,7 @@ jobs:
 
 使用 `changed-only: "true"` 时，根 README 仍会被检查，并且每个在 `base` 与 `HEAD` 之间清单或包 README 发生变化的工作区包，都会用根阈值和预设自动检测进行评估。action 通过 `affected-packages` 暴露被评估的包数量，`--json` 会在 `affected` 下报告每个包。对于拉取请求，请把 `base` 设为 PR 的 base SHA；否则默认使用 `HEAD^`。
 
-action 的输入是 `mode`、`path`、`min-score`、`lang`、`ai`、`changed-only` 和 `base`。只有 `check` 模式使用 `changed-only` 和 `base`。
+action 的输入是 `mode`、`path`、`min-score`、`lang`、`ai`、`changed-only` 和 `base`。只有 `check` 模式使用 `changed-only` 和 `base`。本仓库自己的 CI 工作流使用 `--min-score 85`，比 CLI 和 action 的默认值 `80` 更严格，为合并前的评分波动留出余量；其它项目可以按需统一为 `80`。
 
 action 会从检出的源码构建 CLI，因此不需要 npm 发布。对于其他仓库，请在任务中安装 CLI 并直接运行；CLI 与 CI 平台无关：
 
@@ -397,7 +401,8 @@ console.log(draft.markdown);
 - **不上传源码。** 显式启用 AI 时，它只接收事实块。`--ai off` 绝不打开网络连接。
 - **不记录密钥值。** 扫描器只记录环境变量名称及其来源文件，绝不记录值。
 - **无静默写入。** `scan`、`doctor`、`diff` 和 `check` 都是只读的。`draft` 只写 `README.draft.md`。`apply` 是显式操作，并保留 `.README.bak.md`。
-- **确定性。** 除 git 新鲜度外，相同的仓库状态产生相同的事实、分数和草稿。
+- **确定性（`--ai off` 时）。** 除 git 新鲜度外，相同的仓库状态产生相同的事实、分数和草稿；启用 AI 时，只有简介、功能要点和使用引导句可能不同，并且仍会逐字段接受事实校验。
+- **漏洞私下报告。** 请发送邮件至 [yuwan41064@gmail.com](mailto:yuwan41064@gmail.com)，不要在公开 issue 中附带复现细节；处理流程见 [SECURITY.md](SECURITY.md)。
 
 ## 故障排查
 
@@ -438,7 +443,7 @@ console.log(draft.markdown);
 | `npm run self:doctor` | 为本仓库评分 |
 | `npm run self:check` | 对本仓库运行 CI 门禁 |
 
-测试套件覆盖九个夹具（Node、Python、Rust、Go、Ruby、单仓库、Web、数据集和一个无法识别的项目）、黄金事实表、评分、合并幂等性、差异语义、使用本地桩的 AI 校验、受影响包检测，以及每个 CLI 退出码。CI 强制要求至少 80% 行覆盖、70% 分支覆盖和 80% 函数覆盖。
+测试套件覆盖九个夹具（Node、Python、Rust、Go、Ruby、单仓库、Web、数据集和一个无法识别的项目）、黄金事实表、评分、合并幂等性、差异语义、使用本地桩的 AI 校验、受影响包检测，以及每个 CLI 退出码。`npm run test:coverage` 强制执行至少 80% 行覆盖、70% 分支覆盖和 80% 函数覆盖；随附的 GitHub Actions 测试工作流会调用同一命令（Gitee 不会执行该工作流）。
 
 ## 贡献
 

@@ -26,7 +26,7 @@ program
   .option('--quiet', 'suppress human-readable logs')
   .option('--verbose', 'show debug details')
   .option('--preset <preset>', 'force a project preset: cli|lib|web|monorepo|dataset')
-  .option('--ai <backend>', 'AI backend: local|openai|off')
+  .option('--ai <backend>', 'AI backend for draft: local|openai|off; other commands ignore it')
   .option('--min-score <n>', 'minimum score for doctor and check', (value) => Number(value));
 
 function common(command: Command): Command {
@@ -35,7 +35,7 @@ function common(command: Command): Command {
     .option('--quiet', 'suppress human-readable logs')
     .option('--verbose', 'show debug details')
     .option('--preset <preset>', 'force a project preset: cli|lib|web|monorepo|dataset')
-    .option('--ai <backend>', 'AI backend: local|openai|off')
+    .option('--ai <backend>', 'AI backend for draft: local|openai|off; other commands ignore it')
     .option('--min-score <n>', 'minimum score for doctor and check', (value) => Number(value));
 }
 

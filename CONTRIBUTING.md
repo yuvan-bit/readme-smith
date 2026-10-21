@@ -4,7 +4,7 @@
 
 ## 开发环境
 
-需要 Node.js 18.17 或更新版本。
+运行时需要 Node.js 18.17 或更新版本；开发和测试建议使用 Node.js 22（与随附的 GitHub Actions 工作流一致，`npm run test:coverage` 的覆盖率参数也要求 22+）。
 
 ```bash
 npm install
@@ -101,7 +101,7 @@ node dist/cli.js doctor . --min-score 85
 node dist/cli.js check . --min-score 85
 ```
 
-最后两条命令是项目在自我 dogfood。输出发生变化时，请把结果包含在 PR 描述中。保持拉取请求聚焦；混合重构和行为变更很难审阅。
+最后两条命令是项目在自我 dogfood，使用 85 作为比默认 80 更严的自检阈值。输出发生变化时，请把结果包含在 PR 描述中。保持拉取请求聚焦；混合重构和行为变更很难审阅。参与讨论和贡献即表示你同意遵守 [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)。
 
 ## 报告缺陷
 
@@ -112,7 +112,7 @@ node dist/cli.js check . --min-score 85
 - `rf scan --json` 中相关的事实 JSON（必要时遮盖路径），
 - 你期望的结果。
 
-请不要粘贴专有源码或凭据。最小夹具是最好的复现方式。
+请不要粘贴专有源码或凭据。最小夹具是最好的复现方式。安全漏洞不要提交公开 issue，请按 [SECURITY.md](SECURITY.md) 通过邮件私下报告。
 
 ## 许可证
 

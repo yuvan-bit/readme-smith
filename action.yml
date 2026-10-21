@@ -1,5 +1,5 @@
 name: readme-smith
-description: 本地优先的 README 健康检查与草稿提议 action。
+description: 本地优先的 README 健康检查与草稿提议 action（仅适用于 GitHub Actions）。
 author: yuwan41064
 branding:
   icon: book-open
@@ -58,7 +58,7 @@ runs:
     - name: Set up Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: "20"
+        node-version: "22"
 
     - name: Install readme-smith
       shell: bash
