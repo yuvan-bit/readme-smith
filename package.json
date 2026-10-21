@@ -58,6 +58,7 @@
     "dev": "tsc -p tsconfig.json --watch",
     "clean": "node -e \"fs.rmSync('dist',{recursive:true,force:true});fs.rmSync('dist-test',{recursive:true,force:true})\"",
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.test.json --noEmit",
+    "ci": "npm run typecheck && npm run test:coverage && node dist/cli.js doctor . --min-score 85 && node dist/cli.js check . --min-score 85",
     "pretest": "npm run clean && npm run build && npm run build:test",
     "test": "node --test \"dist-test/test/unit/**/*.test.js\"",
     "pretest:coverage": "npm run clean && npm run build && npm run build:test",

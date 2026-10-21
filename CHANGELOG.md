@@ -6,11 +6,15 @@
 
 ### 新增
 
+- 新增 Gitee Go 流水线 `.workflow/master-pipeline.yml` 与 `.workflow/pr-pipeline.yml`：分别在 push 到 `master` 和向 `master` 发起或更新 PR 时，用 Node.js 22.14.0 运行 `npm ci && npm run ci`。Gitee Go 需在仓库「流水线」页面开通后才会执行。
+- 新增 `npm run ci`，在本地依次复现流水线的类型检查、覆盖率门禁、`doctor` 和 `check`。
+- 新增 `.gitee/ISSUE_TEMPLATE/` 的缺陷、功能与文档表单，以及 `.gitee/pull_request_template.md`；Gitee 会优先读取 `.gitee/` 而不是 `.github/`。
 - 新增 `SECURITY.md` 和 `CODE_OF_CONDUCT.md`，给出私下报告漏洞的流程与社区行为准则。
 
 ### 变更
 
-- CI 文档明确标注 GitHub Actions 的适用范围，并为 Gitee Go 等其它 CI 补充直接运行 `rf check` 的命令；同时说明本仓库 CI 使用阈值 85、CLI 与 action 默认 80 的原因。
+- README 的 CI 章节改为以 Gitee Go 为主，说明流水线文件、触发条件、Node 版本与开通前提；GitHub Actions 明确标注为可选镜像，不再声称 Gitee 会执行 `.github/workflows/`。
+- 贡献指南改用 `npm run ci` 作为提交前检查，与 Gitee Go 流水线保持一致；架构地图补充 `.workflow/` 与 `.gitee/`。
 - `package.json` 增加 `homepage` 和 `bugs`，描述改为中英并列；文档主推 `readme-smith` 命令，保留 `rf` 作为短别名。
 - 为 `v0.1.0` 和 `v0.2.0` 补齐 git tag，本变更日志的版本链接改为指向真实 tag。
 

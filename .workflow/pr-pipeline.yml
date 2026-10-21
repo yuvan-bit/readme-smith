@@ -1,0 +1,28 @@
+version: '1.0'
+name: readme-smith-pr
+displayName: readme-smith PR 检查
+triggers:
+  trigger: auto
+  pr:
+    branches:
+      precise:
+        - master
+stages:
+  - name: verify
+    displayName: 类型检查、测试与仓库自检
+    strategy: naturally
+    trigger: auto
+    executor: []
+    steps:
+      - step: build@nodejs
+        name: node_ci
+        displayName: Node.js 22 构建与测试
+        nodeVersion: 22.14.0
+        commands:
+          - npm ci
+          - npm run ci
+        caches:
+          - ~/.npm
+        notify: []
+        strategy:
+          retry: '0'

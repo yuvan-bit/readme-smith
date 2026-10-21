@@ -1,0 +1,47 @@
+name: 功能请求
+description: 提议新的检测器、评分规则、命令或集成。
+title: "feat: "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: 问题
+      description: 当前哪里不对或缺失？请描述仓库类型，以及工具应当读取的证据。
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: 建议的行为
+      description: 命令应当打印什么、写入什么，或以什么退出码结束？
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: 领域
+      options:
+        - 事实提取
+        - README 分析或评分
+        - 草稿模板或合并
+        - AI 边界或校验器
+        - CLI 或配置
+        - CI、action 或 pre-commit
+        - 文档
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: 证据来源
+      description: 哪些文件或清单字段能证明该事实？事实不得推断。
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: 范围
+      options:
+        - label: 该提议保持 README.md 只读，直到执行 `rf apply`。
+          required: true
+        - label: 该提议默认不要求上传源码。
+          required: true

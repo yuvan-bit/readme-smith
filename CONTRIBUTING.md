@@ -4,7 +4,7 @@
 
 ## 开发环境
 
-运行时需要 Node.js 18.17 或更新版本；开发和测试建议使用 Node.js 22（与随附的 GitHub Actions 工作流一致，`npm run test:coverage` 的覆盖率参数也要求 22+）。
+运行时需要 Node.js 18.17 或更新版本；开发和测试建议使用 Node.js 22（与 `.workflow/` 中的 Gitee Go 流水线、GitHub Actions 工作流一致，`npm run test:coverage` 的覆盖率参数也要求 22+）。
 
 ```bash
 npm install
@@ -41,6 +41,9 @@ node dist/cli.js scan test/fixtures/node-cli
 | `src/draft/ai.ts` | 可选的 OpenAI 兼容文案改写，以及事实校验器。 |
 | `src/diff/structured.ts` | 章节级差异和统一摘录。 |
 | `src/commands/` | 每个 CLI 命令一个模块；退出码也在这里。 |
+| `.workflow/` | Gitee Go 的 master push 与 PR 流水线；两者都运行 `npm ci && npm run ci`。 |
+| `.gitee/` | Gitee issue 表单和拉取请求模板。 |
+| `.github/` | 可选的 GitHub Actions、issue 表单和拉取请求模板。 |
 | `test/unit/` | 单元、黄金和端到端测试（编译到 `dist-test/`）。 |
 | `test/fixtures/`、`test/golden/` | 语言夹具和黄金事实快照。 |
 
@@ -91,17 +94,24 @@ docs: explain the AI privacy boundary
 test(diff): cover insertion line numbers
 ```
 
-打开拉取请求之前：
+## 持续集成
+
+Gitee Go 配置位于 `.workflow/`：push 到 `master` 触发 `master-pipeline.yml`，向 `master` 发起或更新 PR 触发 `pr-pipeline.yml`。两者都在 Node.js 22.14.0 上运行：
 
 ```bash
-npm run typecheck
-npm run build
-npm test
-node dist/cli.js doctor . --min-score 85
-node dist/cli.js check . --min-score 85
+npm ci
+npm run ci
 ```
 
-最后两条命令是项目在自我 dogfood，使用 85 作为比默认 80 更严的自检阈值。输出发生变化时，请把结果包含在 PR 描述中。保持拉取请求聚焦；混合重构和行为变更很难审阅。参与讨论和贡献即表示你同意遵守 [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)。
+Gitee Go 是 Gitee 的增值服务，需要先在仓库的「流水线」页面开通；未开通时流水线不会执行，但本地命令仍然有效。GitHub Actions 的对应工作流位于 `.github/workflows/`，只在 GitHub 上运行。
+
+打开拉取请求之前，至少运行：
+
+```bash
+npm run ci
+```
+
+`npm run ci` 依次执行 `npm run typecheck`、`npm run test:coverage`、`node dist/cli.js doctor . --min-score 85` 和 `node dist/cli.js check . --min-score 85`。最后两条命令是项目在自我 dogfood，使用 85 作为比默认 80 更严的自检阈值。输出发生变化时，请把结果包含在 PR 描述中。保持拉取请求聚焦；混合重构和行为变更很难审阅。参与讨论和贡献即表示你同意遵守 [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)。
 
 ## 报告缺陷
 

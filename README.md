@@ -301,14 +301,43 @@ AI 绝不会用于合并模式或 `rf check`；请求 AI 需要 `--force`（或�
 
 ## CI 集成
 
-> 本节仅适用于 GitHub Actions。Gitee 不会执行 `.github/workflows/` 中的工作流，仓库也未附带 Gitee Go 配置；在 Gitee Go 或其它 CI 中，请直接运行 `npm ci && npm run build && node dist/cli.js check . --min-score 80`。
+CLI 与 CI 平台无关。本仓库附带 Gitee Go 流水线，并保留可选的 GitHub Actions 工作流。
 
-仓库附带 GitHub composite action（`action.yml`），支持两种模式：
+### Gitee Go
+
+`.workflow/` 中定义了两条流水线：
+
+| 文件 | 触发条件 | 用途 |
+| --- | --- | --- |
+| `.workflow/master-pipeline.yml` | push 到 `master` | 主干验证 |
+| `.workflow/pr-pipeline.yml` | 向 `master` 发起或更新 PR | 合并前验证 |
+
+两条流水线都在 Node.js 22.14.0 上执行：
+
+```bash
+npm ci
+npm run ci
+```
+
+`npm run ci` 是本地等价命令，依次运行类型检查、带覆盖率门禁的测试、`doctor` 和 `check`：
+
+```bash
+npm run typecheck
+npm run test:coverage
+node dist/cli.js doctor . --min-score 85
+node dist/cli.js check . --min-score 85
+```
+
+> Gitee Go 是 Gitee 的增值服务，需要先在仓库的「流水线」页面开通，配置好的流水线才会执行。未开通时 `.workflow/` 会保留在仓库中，可在本地或任意 CI 中运行上述命令获得相同结果。
+
+### GitHub Actions
+
+`.github/workflows/` 中的工作流只在 GitHub 上执行；Gitee 不会读取该目录。仓库附带 GitHub composite action（`action.yml`），支持两种模式：
 
 - `check` 运行 `rf check`，在分数过低或草稿过期时使任务失败。结果写入 GitHub 步骤摘要。
 - `proposal` 写入 `README.draft.md`，报告有多少章节需要处理，并保持 `README.md` 不变。随附的 `README proposal` 工作流随后从草稿创建可审阅的拉取请求；是否合并仍由人决定。
 
-在本仓库内，随附工作流使用本地 action：
+在 GitHub 上，随附工作流使用本地 action：
 
 ```yaml
 name: README check
@@ -332,7 +361,7 @@ jobs:
 
 使用 `changed-only: "true"` 时，根 README 仍会被检查，并且每个在 `base` 与 `HEAD` 之间清单或包 README 发生变化的工作区包，都会用根阈值和预设自动检测进行评估。action 通过 `affected-packages` 暴露被评估的包数量，`--json` 会在 `affected` 下报告每个包。对于拉取请求，请把 `base` 设为 PR 的 base SHA；否则默认使用 `HEAD^`。
 
-action 的输入是 `mode`、`path`、`min-score`、`lang`、`ai`、`changed-only` 和 `base`。只有 `check` 模式使用 `changed-only` 和 `base`。本仓库自己的 CI 工作流使用 `--min-score 85`，比 CLI 和 action 的默认值 `80` 更严格，为合并前的评分波动留出余量；其它项目可以按需统一为 `80`。
+action 的输入是 `mode`、`path`、`min-score`、`lang`、`ai`、`changed-only` 和 `base`。只有 `check` 模式使用 `changed-only` 和 `base`。本仓库的 Gitee Go 流水线与 GitHub Actions 工作流都使用 `--min-score 85`，比 CLI 和 action 的默认值 `80` 更严格，为合并前的评分波动留出余量；其它项目可以按需统一为 `80`。
 
 action 会从检出的源码构建 CLI，因此不需要 npm 发布。对于其他仓库，请在任务中安装 CLI 并直接运行；CLI 与 CI 平台无关：
 
@@ -426,6 +455,9 @@ console.log(draft.markdown);
 - `src/diff/` — 章节级差异和统一摘录。
 - `src/ci/` — 从变更文件到受影响工作区包的确定性映射。
 - `src/commands/` — 每个 CLI 命令一个模块，包括退出码。
+- `.workflow/` — Gitee Go 主干与 PR 流水线。
+- `.gitee/` — Gitee issue 表单和拉取请求模板。
+- `.github/` — 可选的 GitHub Actions、issue 表单和拉取请求模板。
 - `test/unit/` — 单元、黄金和端到端测试。
 - `test/fixtures/` 和 `test/golden/` — 语言夹具和黄金事实快照。
 
@@ -438,12 +470,13 @@ console.log(draft.markdown);
 | `npm test` | 运行 Node 测试套件 |
 | `npm run test:coverage` | 带行、分支和函数覆盖率门禁运行测试（Node.js 22+） |
 | `npm run typecheck` | 只做类型检查，不产出文件 |
+| `npm run ci` | 本地运行与 Gitee Go 流水线相同的类型检查、覆盖率、doctor 和 check |
 | `npm run dev` | 变更时重新构建 |
 | `npm run clean` | 删除 `dist/` 和 `dist-test/` |
 | `npm run self:doctor` | 为本仓库评分 |
 | `npm run self:check` | 对本仓库运行 CI 门禁 |
 
-测试套件覆盖九个夹具（Node、Python、Rust、Go、Ruby、单仓库、Web、数据集和一个无法识别的项目）、黄金事实表、评分、合并幂等性、差异语义、使用本地桩的 AI 校验、受影响包检测，以及每个 CLI 退出码。`npm run test:coverage` 强制执行至少 80% 行覆盖、70% 分支覆盖和 80% 函数覆盖；随附的 GitHub Actions 测试工作流会调用同一命令（Gitee 不会执行该工作流）。
+测试套件覆盖九个夹具（Node、Python、Rust、Go、Ruby、单仓库、Web、数据集和一个无法识别的项目）、黄金事实表、评分、合并幂等性、差异语义、使用本地桩的 AI 校验、受影响包检测，以及每个 CLI 退出码。`npm run test:coverage` 强制执行至少 80% 行覆盖、70% 分支覆盖和 80% 函数覆盖；`npm run ci`、Gitee Go 流水线（开通后）和 GitHub Actions 工作流都会调用同一命令。
 
 ## 贡献
 

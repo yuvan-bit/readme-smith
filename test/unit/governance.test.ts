@@ -58,11 +58,66 @@ test('action.yml is a composite action with check and proposal modes', () => {
   assert.match(text, /proposal/);
 });
 
+test('Gitee Go pipelines run the same local ci command on Node 22', () => {
+  const files = ['.workflow/master-pipeline.yml', '.workflow/pr-pipeline.yml'];
+  for (const file of files) {
+    const pipeline = yaml(file) as {
+      version: string;
+      triggers: Record<string, unknown>;
+      stages: Array<{ steps: Array<{ step: string; nodeVersion: string; commands: string[] }> }>;
+    };
+    assert.equal(pipeline.version, '1.0');
+    const step = pipeline.stages[0]?.steps[0];
+    assert.equal(step?.step, 'build@nodejs');
+    assert.equal(step?.nodeVersion, '22.14.0');
+    assert.deepEqual(step?.commands, ['npm ci', 'npm run ci']);
+  }
+  const master = yaml('.workflow/master-pipeline.yml') as { triggers: Record<string, unknown> };
+  const pr = yaml('.workflow/pr-pipeline.yml') as { triggers: Record<string, unknown> };
+  assert.ok(master.triggers.push);
+  assert.ok(!('pr' in master.triggers));
+  assert.ok(pr.triggers.pr);
+  assert.ok(!('push' in pr.triggers));
+});
+
+test('the local ci script mirrors the Gitee Go pipeline', () => {
+  const pkg = JSON.parse(read('package.json')) as { scripts: Record<string, string> };
+  const script = pkg.scripts.ci ?? '';
+  assert.match(script, /npm run typecheck/);
+  assert.match(script, /npm run test:coverage/);
+  assert.match(script, /doctor \. --min-score 85/);
+  assert.match(script, /check \. --min-score 85/);
+});
+
+test('Gitee issue forms and pull request template are present', () => {
+  for (const file of ['bug_report.yml', 'feature_request.yml', 'docs.yml']) {
+    const form = yaml(`.gitee/ISSUE_TEMPLATE/${file}`) as {
+      name: string;
+      description: string;
+      body: unknown[];
+    };
+    assert.ok(form.name, `${file} needs a name`);
+    assert.ok(form.description, `${file} needs a description`);
+    assert.ok(Array.isArray(form.body) && form.body.length > 0, `${file} needs a body`);
+  }
+  assert.match(read('.gitee/pull_request_template.md'), /npm run ci/);
+});
+
+test('README documents the Gitee Go pipeline and local ci command', () => {
+  const text = read('README.md');
+  assert.match(text, /Gitee Go/);
+  assert.match(text, /\.workflow\//);
+  assert.match(text, /pr-pipeline\.yml/);
+  assert.match(text, /npm run ci/);
+});
+
 test('every workflow, issue template and hook parses as YAML', () => {
   const files = [
     '.pre-commit-hooks.yaml',
+    ...readdirSync(path.join(ROOT, '.workflow')).map((f) => `.workflow/${f}`),
     ...readdirSync(path.join(ROOT, '.github/workflows')).map((f) => `.github/workflows/${f}`),
     ...readdirSync(path.join(ROOT, '.github/ISSUE_TEMPLATE')).map((f) => `.github/ISSUE_TEMPLATE/${f}`),
+    ...readdirSync(path.join(ROOT, '.gitee/ISSUE_TEMPLATE')).map((f) => `.gitee/ISSUE_TEMPLATE/${f}`),
   ];
   for (const rel of files) {
     const doc = yaml(rel);
