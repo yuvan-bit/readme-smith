@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
-import { scanFacts } from '../facts/index.js';
+import { scanFacts } from '../../src/facts/index.js';
 import { fixture, GOLDEN } from './helpers.js';
 
 test('node CLI fixture extracts executable, scripts and install commands', () => {

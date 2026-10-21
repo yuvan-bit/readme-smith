@@ -36,7 +36,6 @@
   },
   "files": [
     "dist",
-    "!dist/tests",
     "!dist/**/*.test.js",
     "!dist/**/*.test.js.map",
     "!dist/**/*.test.d.ts",
@@ -49,11 +48,14 @@
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "build:test": "node -e \"fs.rmSync('dist-test',{recursive:true,force:true})\" && tsc -p tsconfig.test.json",
     "dev": "tsc -p tsconfig.json --watch",
-    "clean": "node -e \"fs.rmSync('dist',{recursive:true,force:true})\"",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "node --test \"dist/**/*.test.js\"",
-    "test:coverage": "node --test --experimental-test-coverage --test-coverage-include=\"dist/**/*.js\" --test-coverage-exclude=\"dist/tests/**\" --test-coverage-lines=80 --test-coverage-branches=70 --test-coverage-functions=80 \"dist/**/*.test.js\"",
+    "clean": "node -e \"fs.rmSync('dist',{recursive:true,force:true});fs.rmSync('dist-test',{recursive:true,force:true})\"",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.test.json --noEmit",
+    "pretest": "npm run clean && npm run build && npm run build:test",
+    "test": "node --test \"dist-test/test/unit/**/*.test.js\"",
+    "pretest:coverage": "npm run clean && npm run build && npm run build:test",
+    "test:coverage": "node --test --experimental-test-coverage --test-coverage-include=\"dist-test/src/**/*.js\" --test-coverage-exclude=\"dist-test/test/**\" --test-coverage-lines=80 --test-coverage-branches=70 --test-coverage-functions=80 \"dist-test/test/unit/**/*.test.js\"",
     "prepublishOnly": "npm run clean && npm run build",
     "self:doctor": "node dist/cli.js doctor .",
     "self:check": "node dist/cli.js check ."

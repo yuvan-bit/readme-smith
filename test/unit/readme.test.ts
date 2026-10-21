@@ -3,11 +3,11 @@ import assert from 'node:assert/strict';
 import { readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fixture, tempFixture, tempDir } from './helpers.js';
-import { analyseReadme, analyseCodeCommands, parseReadme } from '../readme/parse.js';
-import { scoreReadme } from '../readme/score.js';
-import { scanFacts } from '../facts/index.js';
-import { defaultWeights } from '../config.js';
-import type { FactSheet, PresetId } from '../types.js';
+import { analyseReadme, analyseCodeCommands, parseReadme } from '../../src/readme/parse.js';
+import { scoreReadme } from '../../src/readme/score.js';
+import { scanFacts } from '../../src/facts/index.js';
+import { defaultWeights } from '../../src/config.js';
+import type { FactSheet, PresetId } from '../../src/types.js';
 
 function scanFixture(name: string): FactSheet {
   return scanFacts({ root: fixture(name), skipGit: true });

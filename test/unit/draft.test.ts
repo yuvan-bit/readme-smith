@@ -4,10 +4,10 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:http';
 import path from 'node:path';
 import { fixture, tempFixture } from './helpers.js';
-import { scanFacts } from '../facts/index.js';
-import { buildDraft, resolveDraftLanguage, validateProse, requestCopy } from '../draft/index.js';
-import type { AiSettings } from '../draft/index.js';
-import type { FactSheet, LanguageSetting, PresetId } from '../types.js';
+import { scanFacts } from '../../src/facts/index.js';
+import { buildDraft, resolveDraftLanguage, validateProse, requestCopy } from '../../src/draft/index.js';
+import type { AiSettings } from '../../src/draft/index.js';
+import type { FactSheet, LanguageSetting, PresetId } from '../../src/types.js';
 
 const AI_OFF: AiSettings = { backend: 'off', baseUrl: null, model: null };
 

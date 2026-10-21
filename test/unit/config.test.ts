@@ -9,7 +9,7 @@ import {
   defaultWeights,
   initConfig,
   loadConfig,
-} from '../config.js';
+} from '../../src/config.js';
 
 test('default weights always sum to 100 and follow the preset', () => {
   for (const preset of ['auto', 'cli', 'lib', 'web', 'monorepo', 'dataset'] as const) {

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { computeDiff, diffLines, unifiedExcerpt } from '../diff/structured.js';
+import { computeDiff, diffLines, unifiedExcerpt } from '../../src/diff/structured.js';
 
 const BASE = [
   '# acme-tool',

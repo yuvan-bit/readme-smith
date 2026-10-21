@@ -170,7 +170,7 @@ rf doctor .
 | --- | --- | --- |
 | `rf scan [path]` | 提取确定性事实表并打印 JSON。 | `0` 成功，`2` 项目类型无法识别 |
 | `rf draft [path]` | 写入 `README.draft.md`；绝不修改 `README.md`。 | `0` 成功，`2` 扫描/类型失败 |
-| `rf diff [path]` | 逐章节比较 `README.md` 与草稿。 | `0` 有差异，`1` 无差异，`2` 错误或草稿缺失 |
+| `rf diff [path]` | 逐章节比较 `README.md` 与草稿。 | `0` 完全一致，`1` 有差异，`2` 错误或草稿缺失（与 `git diff --exit-code` 一致） |
 | `rf doctor [path]` | 评分完整性、可用性、准确性、可读性和新鲜度。 | `0` 通过，`1` 低于阈值，`2` 执行错误 |
 | `rf check [path]` | 为 CI 运行 doctor 加确定性草稿差异；`--changed` 额外检查受影响的工作区包。 | `0` 通过，`1` 失败，`2` 错误 |
 | `rf apply [path]` | 把草稿复制到 `README.md`，并创建备份。 | `0` 成功，`2` 草稿缺失或写入失败 |
@@ -210,7 +210,7 @@ rf doctor .
 
 ```bash
 rf draft .
-rf diff . --show       # 有差异时退出 0，完全一致时退出 1
+rf diff . --show       # 完全一致时退出 0，有差异时退出 1（与 git diff --exit-code 一致）
 rf apply . --dry-run   # 退出 0；不写入，也不创建备份
 rf apply .             # 备份到 .README.bak.md，然后替换 README.md
 ```
@@ -410,7 +410,8 @@ console.log(draft.markdown);
 | CI 上新鲜度看起来不对 | 浅克隆隐藏历史。设置 `fetch-depth: 2` 或更深。 |
 | `check --changed` 以 `git_base_not_found` 退出 `2` | 比较修订在检出中不存在。请获取 PR 基准（或传入有效的 `--base`）。 |
 | 配置警告权重问题 | 五个权重必须合计为 `100`；否则整个权重块回退到默认值。 |
-| `diff` 退出 `1` | README 与草稿之间没有差异。这是“已经同步”的情况。 |
+| `diff` 退出 `1` | README 与草稿之间存在差异。运行 `rf diff . --show` 查看章节摘要与统一摘录。 |
+| `diff` 退出 `0` | README 与草稿完全一致。这是“已经同步”的情况。 |
 
 ## 项目结构
 
@@ -420,8 +421,8 @@ console.log(draft.markdown);
 - `src/diff/` — 章节级差异和统一摘录。
 - `src/ci/` — 从变更文件到受影响工作区包的确定性映射。
 - `src/commands/` — 每个 CLI 命令一个模块，包括退出码。
+- `test/unit/` — 单元、黄金和端到端测试。
 - `test/fixtures/` 和 `test/golden/` — 语言夹具和黄金事实快照。
-- `src/tests/` — 单元、黄金和端到端测试。
 
 ## 开发
 
@@ -433,7 +434,7 @@ console.log(draft.markdown);
 | `npm run test:coverage` | 带行、分支和函数覆盖率门禁运行测试（Node.js 22+） |
 | `npm run typecheck` | 只做类型检查，不产出文件 |
 | `npm run dev` | 变更时重新构建 |
-| `npm run clean` | 删除 `dist/` |
+| `npm run clean` | 删除 `dist/` 和 `dist-test/` |
 | `npm run self:doctor` | 为本仓库评分 |
 | `npm run self:check` | 对本仓库运行 CI 门禁 |
 

@@ -237,7 +237,7 @@ test('diff exit codes distinguish changes, no changes and a missing draft', () =
   try {
     run(['draft', '.', '--ai', 'off'], root);
     const same = run(['diff', '.', '--json'], root);
-    assert.equal(same.status, 1);
+    assert.equal(same.status, 0);
     const noChanges = parseJson<{ hasChanges: boolean }>(same.stdout);
     assert.equal(noChanges.hasChanges, false);
 
@@ -246,13 +246,13 @@ test('diff exit codes distinguish changes, no changes and a missing draft', () =
       readFileSync(path.join(root, 'README.draft.md'), 'utf8') + '\n## Extra\n\nDetails.\n',
     );
     const changed = run(['diff', '.', '--json'], root);
-    assert.equal(changed.status, 0);
+    assert.equal(changed.status, 1);
     const diff = parseJson<{ hasChanges: boolean; changes: Array<{ kind: string; title: string }> }>(changed.stdout);
     assert.equal(diff.hasChanges, true);
     assert.deepEqual(diff.changes.map((c) => [c.kind, c.title]), [['added', 'Extra']]);
 
     const shown = run(['diff', '.', '--show'], root);
-    assert.equal(shown.status, 0);
+    assert.equal(shown.status, 1);
     assert.match(shown.stdout, /--- README\.md/);
     assert.match(shown.stdout, /\+## Extra/);
 
@@ -465,7 +465,7 @@ test('quiet commands still print their conclusion', () => {
     assert.match(draft.stdout, /^Wrote README\.draft\.md/m);
 
     const diff = run(['diff', '.', '--quiet'], root);
-    assert.equal(diff.status, 1);
+    assert.equal(diff.status, 0);
     assert.match(diff.stdout, /No differences/);
   } finally {
     cleanup();

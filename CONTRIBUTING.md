@@ -20,7 +20,7 @@ npm run typecheck    # 不产出文件
 node dist/cli.js scan test/fixtures/node-cli
 ```
 
-测试套件使用 Node 测试运行器和黄金文件。它没有网络依赖；AI 测试会启动本地桩服务器。
+测试套件使用 Node 测试运行器和黄金文件。它没有网络依赖；AI 测试会启动本地桩服务器。`npm test` 会先清理并重新构建 `dist/` 与 `dist-test/`，因此分支切换后残留的旧编译产物不会造成假失败。测试源码统一位于 `test/unit/`。
 
 ## 不可谈判的规则
 
@@ -41,7 +41,8 @@ node dist/cli.js scan test/fixtures/node-cli
 | `src/draft/ai.ts` | 可选的 OpenAI 兼容文案改写，以及事实校验器。 |
 | `src/diff/structured.ts` | 章节级差异和统一摘录。 |
 | `src/commands/` | 每个 CLI 命令一个模块；退出码也在这里。 |
-| `src/tests/` | 单元、黄金和端到端测试。 |
+| `test/unit/` | 单元、黄金和端到端测试（编译到 `dist-test/`）。 |
+| `test/fixtures/`、`test/golden/` | 语言夹具和黄金事实快照。 |
 
 ## 添加语言或生态检测器
 
@@ -53,12 +54,12 @@ node dist/cli.js scan test/fixtures/node-cli
    - 实现 `parseX()`，返回共享的 `ManifestResult`：名称、显示名、版本、描述、许可证、依赖、脚本、入口、二进制、工作区包和发布状态。
    - 仅当清单本身声明可执行文件（或存在真实二进制目标，如 Cargo 的 `src/main.rs` 和 Go 的 `package main`）时才设置 `binNames`。
 3. **安装与使用** — 在同一文件中教会 `installCommandFor()` 消费者和开发安装命令。使用方式会自动从声明的二进制或 `dev`/`start` 脚本推导；不要添加文案。
-4. **夹具** — 在 `test/fixtures/<name>/` 下添加一个真实项目，包含清单、小型源文件、许可证和 README。它不得包含密钥或生成的构建产物。
-5. **测试** — 在 `src/tests/facts.test.ts` 中添加断言，并把夹具加入 `GOLDEN_CASES`。有意重新生成黄金事实：
+4. **夹具** — 在 `test/fixtures/<name>/` 下添加一个真实项目，包含清单、小型源文件、许可证和 README。它不得包含密钥、生成的构建产物，或手动运行 CLI 留下的 `README.draft.md` / `.README.bak.md`。
+5. **测试** — 在 `test/unit/facts.test.ts` 中添加断言，并把夹具加入 `GOLDEN_CASES`。有意重新生成黄金事实：
 
    ```bash
-   npm run build
-   UPDATE_GOLDEN=1 node --test "dist/tests/facts.test.js"
+   npm run build:test
+   UPDATE_GOLDEN=1 node --test "dist-test/test/unit/facts.test.js"
    git diff test/golden
    ```
 

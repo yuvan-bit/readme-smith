@@ -58,5 +58,5 @@ export function runDiff(rawPath: string | undefined, options: DiffOptions): numb
     }
   }
 
-  return diff.hasChanges ? EXIT.OK : EXIT.FAIL;
+  return diff.hasChanges ? EXIT.FAIL : EXIT.OK;
 }

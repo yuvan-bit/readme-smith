@@ -3,6 +3,11 @@ node_modules/
 
 # Build output
 dist/
+dist-test/
+
+# Generated drafts and backups
+README.draft.md
+.README.bak.md
 
 # Local scratch: probe scripts, throwaway generations, README backups
 /tmp/

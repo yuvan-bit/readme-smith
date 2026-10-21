@@ -77,7 +77,7 @@ common(
 common(
   program
     .command('diff')
-    .description('Compare README.md with README.draft.md section by section.')
+    .description('Compare README.md with README.draft.md section by section. Exits 0 when identical, 1 when different.')
     .argument('[path]', 'repository path', '.')
     .option('--show', 'print a unified line excerpt'),
 ).action((pathArg: string, commandOptions: DiffOptions) => {

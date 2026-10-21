@@ -13,9 +13,16 @@
 
 ### 变更
 
+- **`rf diff` 退出码反转**，与 `git diff --exit-code` 保持一致：`0` 完全一致，`1` 存在差异，`2` 错误或草稿缺失。CI 中可直接使用 `rf diff || echo changed`。
+- 测试源码统一到 `test/unit/`，测试构建输出到 `dist-test/`，与 `test/fixtures/`、`test/golden/` 同处 `test/` 目录。
+- `npm test` 和 `npm run test:coverage` 现在会先清理并重建 `dist/` 与 `dist-test/`，分支切换后不会再执行已删除测试的陈旧编译产物。
 - README、贡献指南和本变更日志已完整中文化，面向 Gitee 项目页；重复的 `中文简介` 章节已并入开篇。
 - CI 测试任务运行在 Node.js 22 上，以支持覆盖率阈值参数。
 - README 和变更日志记录了扩展后的 AI 边界、changed-only 单仓库检查和覆盖率门禁。
+
+### 修复
+
+- 手动对夹具运行 `rf draft` / `rf apply` 后留下的 `README.draft.md`、`.README.bak.md` 不再污染测试：测试复制夹具时会跳过这些生成文件，`.gitignore` 也已覆盖它们。
 
 ## [0.2.0] — 2026-10-21
 

@@ -4,7 +4,7 @@ import { readFileSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 import { parse as parseYaml } from 'yaml';
 import { ROOT } from './helpers.js';
-import { parseReadme, slugify } from '../readme/parse.js';
+import { parseReadme, slugify } from '../../src/readme/parse.js';
 
 function read(rel: string): string {
   return readFileSync(path.join(ROOT, rel), 'utf8');

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { affectedPackageTargets } from '../ci/affected.js';
+import { affectedPackageTargets } from '../../src/ci/affected.js';
 import { fixture } from './helpers.js';
 
 test('affected targets include workspace manifests and package READMEs only', () => {
