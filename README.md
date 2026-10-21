@@ -91,7 +91,7 @@ npm install -g readme-smith
 readme-smith --version
 ```
 
-> 0.3.0 的 tarball 已通过打包和干净安装验证。若 npm registry 上的 readme-smith 尚未显示 `0.3.0`，请使用下方的源码安装。
+0.3.0 已发布到 npm，可用 `npm install -g readme-smith` 直接安装，版本历史见 [npm 包页面](https://www.npmjs.com/package/readme-smith)。
 
 不想全局安装时，用 `npx` 直接运行：
 
@@ -530,7 +530,7 @@ console.log(draft.markdown);
 
 ### 版本与发布
 
-版本号遵循 [Semantic Versioning](https://semver.org/)。每个发布版本都有对应的 `vX.Y.Z` git tag、GitHub Release 和 [CHANGELOG.md](CHANGELOG.md) 条目；变更日志按“新增 / 变更 / 修复 / 移除”分类，说明该版本实际改了什么。当前版本为 **0.3.0**：npm 包已打包并验证，registry 同步状态以 npm 上的 readme-smith 页面为准；GitHub 主仓库、权重归一化、真实仓库实测和 `rf` 命令移除都记录在该条目中。
+版本号遵循 [Semantic Versioning](https://semver.org/)。每个发布版本都有对应的 `vX.Y.Z` git tag、GitHub Release 和 [CHANGELOG.md](CHANGELOG.md) 条目；变更日志按“新增 / 变更 / 修复 / 移除”分类，说明该版本实际改了什么。当前版本为 **0.3.0**，已发布到 npm；GitHub 主仓库、权重归一化、真实仓库实测和 `rf` 命令移除都记录在该条目中。
 
 ## 贡献
 

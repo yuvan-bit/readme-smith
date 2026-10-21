@@ -8,7 +8,7 @@
 
 ### 新增
 
-- 提供 npm 分发包 `readme-smith`：`package.json` 只暴露一个可执行文件，`npm pack` 产物已通过干净安装验证；registry 同步后支持 `npm install -g readme-smith`、`npm install --save-dev readme-smith` 和 `npx readme-smith`，不再要求 `git clone` + `build` + `link`。
+- 提供 npm 分发包 `readme-smith`：`package.json` 只暴露一个可执行文件，`npm pack` 产物已通过干净安装验证；已发布到 npm registry，支持 `npm install -g readme-smith`、`npm install --save-dev readme-smith` 和 `npx readme-smith`，不再要求 `git clone` + `build` + `link`。
 - 新增 GitHub composite action 的 tag 用法 `yuvan-bit/readme-smith@v0.3.0`，与 npm 安装路径并存。
 - 新增真实仓库实测数据：`is-number` 97、`cross-env` 92、`chalk` 91、`express` 79；并给出 `pallets/click` 从 **74 分修复到 99 分** 的可复现前后对比。
 - 新增 `SECURITY.md` 实测：扫描事实表记录 `community.security`，治理测试验证支持版本、私下报告邮箱和 README 链接。
