@@ -145,7 +145,7 @@ readme-smith check .              # CI 门禁：评分加草稿差异
 
 以下分数不是示意值，而是用 `readme-smith doctor <path> --json --ai off` 在 2026-10-21 实际测得的。每个仓库用 `git clone --depth 1` 检出并固定到表中的提交；阈值使用默认的 `80`。
 
-下面是在 Click 同一提交的浅克隆副本上的完整真实运行，右侧分数直接取自终端输出：`doctor` 74 → `draft` → `apply` → `doctor` 99，最后 `check` 通过。全程 `--ai off`，没有剪辑或改写命令输出。
+下面是在 Click 同一提交的浅克隆副本上的完整真实运行：`doctor` 74 → `draft` → `apply` → `doctor` 99，最后 `check` 通过。全程 `--ai off`；GIF 由真实命令输出逐帧渲染，右侧分数直接取自终端输出，命令与输出未改写。
 
 ![readme-smith 在 pallets/click 上的真实运行：74 分修复到 99 分](docs/assets/readme-smith-demo.gif)
 
